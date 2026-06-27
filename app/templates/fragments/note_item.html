@@ -1,0 +1,15 @@
+<div class="saved-note-card" id="note-{{ note.id }}">
+    <div style="display:flex; justify-content:space-between; align-items:start;">
+        <div class="saved-note-title">{{ note.title }}</div>
+        <button class="btn-delete"
+                hx-delete="/sources/{{ note.source_id }}/notes/{{ note.id }}"
+                hx-target="#note-{{ note.id }}"
+                hx-swap="outerHTML"
+                hx-confirm="Delete this note?">Delete</button>
+    </div>
+    <div class="saved-note-preview">{{ note.content[:100] }}{% if note.content|length > 100 %}...{% endif %}</div>
+    <div class="saved-note-meta">
+        <span>{{ note.created_at.strftime('%b %d, %I:%M %p') }}</span>
+        <span>{{ note.word_count }} words</span>
+    </div>
+</div>

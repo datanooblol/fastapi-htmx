@@ -1,0 +1,479 @@
+{% extends "base.html" %}
+{% set active_page = "notes" %}
+
+{% block title %}SecondBrain — {% if source %}{{ source.title }}{% else %}New Source{% endif %}{% endblock %}
+
+{% block head %}
+<style>
+    .steps { display: flex; gap: 0; margin-bottom: 28px; border-bottom: 2px solid var(--border); }
+    .step { padding: 12px 24px; font-size: 0.85rem; color: var(--text-muted); cursor: pointer; position: relative; display: flex; align-items: center; gap: 8px; }
+    .step:hover { color: var(--text-secondary); }
+    .step.active { color: var(--accent); font-weight: 600; }
+    .step.active::after { content: ""; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px; background-color: var(--accent); }
+    .step.completed { color: var(--success); }
+    .step-number { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid currentColor; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; }
+    .step.completed .step-number { background-color: var(--success); border-color: var(--success); color: white; }
+
+    .step-panel { display: none; }
+    .step-panel.active { display: block; }
+
+    .source-tabs { display: flex; gap: 0; margin-bottom: 20px; }
+    .source-tab { padding: 10px 20px; background-color: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; font-size: 0.85rem; transition: all 0.15s; }
+    .source-tab:first-child { border-radius: 6px 0 0 6px; }
+    .source-tab:last-child { border-radius: 0 6px 6px 0; }
+    .source-tab:not(:first-child) { border-left: none; }
+    .source-tab.active { background-color: var(--accent); border-color: var(--accent); color: white; font-weight: 500; }
+
+    .source-input-area { display: none; }
+    .source-input-area.active { display: block; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
+    .form-input, .form-textarea, .form-select { width: 100%; padding: 10px 14px; background-color: var(--bg-input); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.875rem; font-family: inherit; transition: border-color 0.15s; }
+    .form-input:focus, .form-textarea:focus, .form-select:focus { outline: none; border-color: var(--accent); }
+    .form-textarea { resize: vertical; min-height: 200px; line-height: 1.6; }
+    .form-hint { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; }
+
+    .upload-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 48px 24px; text-align: center; cursor: pointer; transition: all 0.15s; }
+    .upload-zone:hover { border-color: var(--accent); background-color: var(--bg-card); }
+    .upload-icon { font-size: 2.5rem; margin-bottom: 12px; color: var(--text-muted); }
+    .upload-text { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 4px; }
+    .upload-hint { font-size: 0.75rem; color: var(--text-muted); }
+
+    .btn-row { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+
+    .workspace { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; height: 70vh; }
+    .workspace-panel { background-color: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .panel-header h3 { font-size: 0.9rem; font-weight: 600; }
+    .panel-body { flex: 1; overflow-y: auto; padding: 18px; min-height: 0; }
+    .panel-tabs { display: flex; gap: 0; }
+    .panel-tab { padding: 6px 14px; font-size: 0.75rem; background: none; border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
+    .panel-tab:first-child { border-radius: 4px 0 0 4px; }
+    .panel-tab:last-child { border-radius: 0 4px 4px 0; }
+    .panel-tab:not(:first-child) { border-left: none; }
+    .panel-tab.active { background-color: var(--accent); border-color: var(--accent); color: white; }
+
+    .source-content { font-size: 0.875rem; line-height: 1.8; color: var(--text-secondary); white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word; }
+    .source-meta-bar { display: flex; gap: 16px; padding: 10px 18px; border-top: 1px solid var(--border); font-size: 0.7rem; color: var(--text-muted); flex-shrink: 0; }
+
+    .note-editor { width: 100%; min-height: 200px; padding: 0; background: none; border: none; color: var(--text-primary); font-size: 0.875rem; font-family: inherit; line-height: 1.8; resize: none; }
+    .note-editor:focus { outline: none; }
+    .note-editor::placeholder { color: var(--text-muted); }
+
+    .saved-note-card { padding: 10px 12px; background-color: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; }
+    .saved-note-card:hover { border-color: var(--accent); }
+    .saved-note-title { font-size: 0.8rem; font-weight: 500; }
+    .saved-note-preview { font-size: 0.7rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .saved-note-meta { font-size: 0.65rem; color: var(--text-muted); margin-top: 4px; display: flex; gap: 10px; }
+
+    .btn-delete { padding: 3px 10px; background: none; border: 1px solid var(--border); border-radius: 4px; color: var(--text-muted); cursor: pointer; font-size: 0.7rem; transition: all 0.15s; }
+    .btn-delete:hover { color: var(--danger); border-color: var(--danger); }
+
+    .summary-selector { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .summary-selector .form-select { flex: 1; padding: 6px 10px; font-size: 0.8rem; }
+    .summary-badge { display: inline-block; font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; background-color: var(--tag-bg); color: var(--accent); margin-bottom: 12px; }
+    .summary-body { line-height: 1.8; font-size: 0.875rem; color: var(--text-secondary); white-space: pre-wrap; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:4px;">
+    <a href="/">Dashboard</a> / <a href="/notes">Notes</a> / {% if source %}{{ source.title }}{% else %}New Source{% endif %}
+</div>
+<div class="page-header">
+    <h2>Source Workspace</h2>
+</div>
+
+<!-- Step Indicator -->
+<div class="steps">
+    <div class="step {% if not source %}active{% else %}completed{% endif %}" onclick="goToStep(1)">
+        <span class="step-number">1</span> Add Source
+    </div>
+    <div class="step {% if source and step == 2 %}active{% elif source %}completed{% endif %}" onclick="goToStep(2)">
+        <span class="step-number">2</span> Summarize
+    </div>
+    <div class="step {% if source and step == 3 %}active{% endif %}" onclick="goToStep(3)">
+        <span class="step-number">3</span> Read & Note
+    </div>
+</div>
+
+<!-- ======== STEP 1: ADD SOURCE ======== -->
+<div class="step-panel {% if not source %}active{% endif %}" id="step-1">
+    <form action="/sources" method="post" enctype="multipart/form-data">
+        <div class="source-tabs">
+            <button type="button" class="source-tab active" onclick="switchSourceTab('write')">Write Note</button>
+            <button type="button" class="source-tab" onclick="switchSourceTab('paste')">Paste Text</button>
+            <button type="button" class="source-tab" onclick="switchSourceTab('upload')">Upload File</button>
+        </div>
+
+        <input type="hidden" name="source_type" id="source-type-input" value="write">
+
+        <!-- Hidden fields that always get submitted -->
+        <input type="hidden" name="title" id="title-write" value="">
+        <input type="hidden" name="content" id="content-write" value="">
+
+        <div class="source-input-area active" id="source-write">
+            <div class="form-group">
+                <label class="form-label">Title</label>
+                <input type="text" class="form-input" id="input-title-write" placeholder="What is this about?">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Content</label>
+                <textarea class="form-textarea" id="input-content-write" placeholder="Write your thoughts..."></textarea>
+            </div>
+        </div>
+
+        <div class="source-input-area" id="source-paste">
+            <div class="form-group">
+                <label class="form-label">Title</label>
+                <input type="text" class="form-input" id="title-paste" placeholder="Name this source">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Source URL (optional)</label>
+                <input type="text" class="form-input" name="source_url" placeholder="https://...">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Pasted Content</label>
+                <textarea class="form-textarea" id="content-paste" placeholder="Paste text from a website, article, paper..."></textarea>
+            </div>
+        </div>
+
+        <div class="source-input-area" id="source-upload">
+            <div class="form-group">
+                <label class="form-label">Title</label>
+                <input type="text" class="form-input" id="title-upload" placeholder="Name this source">
+            </div>
+            <div class="form-group">
+                <label class="form-label">File</label>
+                <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+                    <div class="upload-icon">&#8679;</div>
+                    <div class="upload-text">Drop file here or click to browse</div>
+                    <div class="upload-hint">PDF, DOCX, TXT, HTML, PPTX — max 20MB</div>
+                    <input type="file" id="file-input" name="file" style="display:none" accept=".pdf,.docx,.txt,.html,.pptx,.md">
+                </div>
+                <div id="file-preview" style="display:none; margin-top:12px; padding:10px; background:var(--bg-card); border:1px solid var(--border); border-radius:6px; font-size:0.85rem;">
+                    <span id="file-preview-name"></span>
+                    <button type="button" style="float:right; background:none; border:none; color:var(--danger); cursor:pointer;" onclick="clearFile()">&#10005;</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Tags</label>
+            <input type="text" class="form-input" name="tags" placeholder="AI, Research, Machine Learning (comma separated)">
+            <div class="form-hint">Separate tags with commas</div>
+        </div>
+
+        <div class="btn-row">
+            <button type="submit" class="btn btn-primary">Save Source &#8594;</button>
+        </div>
+    </form>
+</div>
+
+<!-- ======== STEP 2: SUMMARIZE ======== -->
+<div class="step-panel {% if source and step == 2 %}active{% endif %}" id="step-2">
+    {% if source %}
+    <div class="form-group">
+        <label class="form-label">Choose a Summary Prompt</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+            <select class="form-select" id="prompt-select" name="prompt_template_id" style="flex:1;" onchange="onPromptChange(this)">
+                {% for prompt in prompts %}
+                <option value="{{ prompt.id }}" data-default="{{ prompt.is_default | lower }}" {% if prompt.is_default %}selected{% endif %}>{{ prompt.name }}{% if prompt.is_default %} (default){% endif %}</option>
+                {% endfor %}
+            </select>
+            <button type="button" class="btn btn-secondary" style="white-space:nowrap; padding:8px 14px; font-size:0.8rem;" onclick="toggleNewPromptForm()">+ New Prompt</button>
+            <button type="button" id="delete-prompt-btn" class="btn-delete" style="display:none; white-space:nowrap;" onclick="deleteSelectedPrompt()">Delete</button>
+        </div>
+    </div>
+
+    <!-- New prompt inline form -->
+    <div id="new-prompt-form" style="display:none; background-color:var(--bg-card); border:1px solid var(--accent); border-radius:8px; padding:20px; margin-bottom:20px;">
+        <h4 style="font-size:0.9rem; margin-bottom:16px; color:var(--accent);">Create New Prompt Template</h4>
+        <div id="prompt-error"></div>
+        <form hx-post="/prompts"
+              hx-target="#prompt-select"
+              hx-swap="beforeend"
+              hx-on::before-request="document.getElementById('prompt-error').innerHTML='';"
+              hx-on::after-request="handlePromptResponse(event)">
+            <div class="form-group">
+                <label class="form-label">Prompt Name</label>
+                <input type="text" class="form-input" name="name" placeholder="e.g., Bullet Point Summary" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Prompt Text</label>
+                <textarea class="form-textarea" name="prompt_text" style="min-height:120px;"
+                    placeholder="Write your prompt here. Use {source_text} where the source content should be inserted." required></textarea>
+                <div class="form-hint">Tip: Use {source_text} as a placeholder for the source content</div>
+            </div>
+            <div class="btn-row" style="margin-top:12px;">
+                <button type="button" class="btn btn-secondary" onclick="toggleNewPromptForm()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Prompt</button>
+            </div>
+        </form>
+    </div>
+
+    <div style="background-color:var(--bg-input); border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:0.8rem; color:var(--text-secondary);">Prompt Preview</span>
+            <span style="font-size:0.7rem; color:var(--text-muted); font-style:italic;">Edit below to customize (won't change the saved template)</span>
+        </div>
+        <textarea class="form-textarea" id="prompt-preview" name="prompt_text" style="min-height:100px;">{% if prompts %}{{ prompts[0].prompt_text }}{% endif %}</textarea>
+    </div>
+    <div id="summary-result"></div>
+
+    <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goToStep(1)">&#8592; Back</button>
+        <button class="btn btn-secondary" onclick="goToStep(3)">Skip to Notes</button>
+        <button class="btn btn-primary" id="run-summary-btn"
+                hx-post="/sources/{{ source.id }}/summarize"
+                hx-target="#summary-result"
+                hx-swap="innerHTML"
+                hx-include="#prompt-select, #prompt-preview"
+                hx-indicator="#summary-spinner"
+                onclick="this.disabled=true; this.innerHTML='Summarizing...';">
+            Run Summary &#8594;
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ======== STEP 3: READ & NOTE ======== -->
+<div class="step-panel {% if source and step == 3 %}active{% endif %}" id="step-3">
+    {% if source %}
+    <div class="workspace">
+        <!-- Left: Source + Summaries -->
+        <div class="workspace-panel">
+            <div class="panel-header">
+                <h3>Source</h3>
+                <div class="panel-tabs">
+                    <button class="panel-tab active" onclick="switchReadTab('original')">Original</button>
+                    <button class="panel-tab" onclick="switchReadTab('summary')">Summaries ({{ summaries|length }})</button>
+                </div>
+            </div>
+            <div class="panel-body">
+                <div class="source-content" id="read-original">{{ source.raw_content or "(No content)" }}</div>
+                <div id="read-summary" style="display:none;">
+                    {% if summaries %}
+                    <div class="summary-selector">
+                        <select class="form-select" onchange="switchSummary(this.value)">
+                            {% for s in summaries %}
+                            <option value="summary-{{ s.id }}">{{ s.prompt_name or "Summary" }} — {{ s.created_at.strftime('%b %d') }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% for s in summaries %}
+                    <div id="summary-{{ s.id }}" class="summary-body" style="{% if not loop.first %}display:none{% endif %}">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <span class="summary-badge">{{ s.prompt_name or "Summary" }}</span>
+                            <button class="btn-delete"
+                                    hx-delete="/sources/{{ source.id }}/summaries/{{ s.id }}"
+                                    hx-target="closest .summary-body"
+                                    hx-swap="outerHTML"
+                                    hx-confirm="Delete this summary?">Delete</button>
+                        </div>
+                        {{ s.content }}
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div style="text-align:center; padding:32px; color:var(--text-muted);">
+                        No summaries yet. Go to Step 2 to generate one.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="source-meta-bar">
+                <span>{{ source.source_type }}</span>
+                <span>{{ source.word_count }} words</span>
+                <span>{{ summaries|length }} summaries</span>
+            </div>
+        </div>
+
+        <!-- Right: Notes -->
+        <div class="workspace-panel">
+            <div class="panel-header">
+                <h3>Your Notes</h3>
+            </div>
+            <div class="panel-body">
+                <form hx-post="/sources/{{ source.id }}/notes"
+                      hx-target="#saved-notes"
+                      hx-swap="afterbegin"
+                      hx-on::after-request="if(event.detail.successful) { this.reset(); }">
+                    <div class="form-group">
+                        <input type="text" name="title" class="form-input" placeholder="Note title..."
+                               style="background:none; border:none; border-bottom:1px solid var(--border); border-radius:0; padding:4px 0; font-size:1rem; font-weight:600; margin-bottom:12px;" required>
+                    </div>
+                    <textarea name="content" class="note-editor" placeholder="Write your notes here..." required></textarea>
+                    <div class="btn-row" style="margin-top:12px;">
+                        <button type="submit" class="btn btn-primary" style="padding:6px 16px; font-size:0.8rem;">Save Note</button>
+                    </div>
+                </form>
+
+                <div id="saved-notes" style="margin-top:20px;">
+                    {% for note in notes %}
+                        {% include "fragments/note_item.html" %}
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="source-meta-bar">
+                <span>Markdown supported</span>
+                <span>{{ notes|length }} notes</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goToStep(2)">&#8592; Back to Summary</button>
+        <a href="/graph" class="btn btn-success">View Graph &#8594;</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function goToStep(n) {
+        document.querySelectorAll(".step-panel").forEach(p => p.classList.remove("active"));
+        const panel = document.getElementById("step-" + n);
+        if (panel) panel.classList.add("active");
+        document.querySelectorAll(".step").forEach((s, i) => {
+            s.classList.remove("active", "completed");
+            if (i + 1 === n) s.classList.add("active");
+            if (i + 1 < n) s.classList.add("completed");
+        });
+    }
+
+    function switchSourceTab(tab) {
+        document.querySelectorAll(".source-tab").forEach(t => t.classList.remove("active"));
+        document.querySelectorAll(".source-input-area").forEach(a => a.classList.remove("active"));
+        event.target.classList.add("active");
+        document.getElementById("source-" + tab).classList.add("active");
+        document.getElementById("source-type-input").value = tab;
+
+        // Sync the title and content fields to the form's actual name attributes
+        const titleField = document.querySelector(`#source-${tab} .form-input[placeholder]`);
+        const form = document.querySelector("#step-1 form");
+        // Update hidden type
+        document.getElementById("source-type-input").value = tab;
+    }
+
+    function switchReadTab(tab) {
+        document.querySelectorAll(".panel-tab").forEach(t => t.classList.remove("active"));
+        event.target.classList.add("active");
+        document.getElementById("read-original").style.display = tab === "original" ? "block" : "none";
+        document.getElementById("read-summary").style.display = tab === "summary" ? "block" : "none";
+    }
+
+    function switchSummary(id) {
+        document.querySelectorAll(".summary-body").forEach(s => s.style.display = "none");
+        const target = document.getElementById(id);
+        if (target) target.style.display = "block";
+    }
+
+    // File upload preview
+    document.getElementById("file-input").addEventListener("change", function () {
+        if (this.files.length > 0) {
+            document.getElementById("file-preview-name").textContent = this.files[0].name;
+            document.getElementById("file-preview").style.display = "block";
+        }
+    });
+
+    function clearFile() {
+        document.getElementById("file-input").value = "";
+        document.getElementById("file-preview").style.display = "none";
+    }
+
+    // Handle form submission — sync visible tab inputs to hidden form fields
+    document.querySelector("#step-1 form").addEventListener("submit", function(e) {
+        const type = document.getElementById("source-type-input").value;
+        const titleField = document.getElementById("title-write");
+        const contentField = document.getElementById("content-write");
+
+        if (type === "write") {
+            titleField.value = document.getElementById("input-title-write").value;
+            contentField.value = document.getElementById("input-content-write").value;
+        } else if (type === "paste") {
+            titleField.value = document.getElementById("title-paste").value;
+            contentField.value = document.getElementById("content-paste").value;
+        } else if (type === "upload") {
+            titleField.value = document.getElementById("title-upload").value;
+            contentField.value = "";
+        }
+
+        if (!titleField.value.trim()) {
+            e.preventDefault();
+            alert("Please enter a title");
+        }
+    });
+
+    function toggleNewPromptForm() {
+        const form = document.getElementById("new-prompt-form");
+        form.style.display = form.style.display === "none" ? "block" : "none";
+        document.getElementById("prompt-error").innerHTML = "";
+    }
+
+    function handlePromptResponse(event) {
+        const xhr = event.detail.xhr;
+        if (xhr.status === 200) {
+            toggleNewPromptForm();
+            event.target.closest("form").reset();
+
+            // Auto-select the newly created prompt (last option in dropdown)
+            const select = document.getElementById("prompt-select");
+            setTimeout(function() {
+                select.selectedIndex = select.options.length - 1;
+                onPromptChange(select);
+            }, 100);
+        } else if (xhr.status === 409) {
+            document.getElementById("prompt-error").innerHTML = xhr.responseText;
+            event.detail.shouldSwap = false;
+        }
+    }
+
+    // Handle prompt dropdown change — load preview and show/hide delete button
+    // Re-enable summary button after request completes
+    document.body.addEventListener("htmx:afterRequest", function(event) {
+        const btn = document.getElementById("run-summary-btn");
+        if (btn && event.detail.elt === btn) {
+            btn.disabled = false;
+            btn.innerHTML = "Run Summary &#8594;";
+        }
+    });
+
+    function onPromptChange(select) {
+        const option = select.options[select.selectedIndex];
+        const templateId = select.value;
+        const isDefault = option.getAttribute("data-default") === "true";
+
+        // Load prompt text
+        fetch("/prompts/preview/" + templateId)
+            .then(r => r.text())
+            .then(text => {
+                document.getElementById("prompt-preview").value = text;
+            });
+
+        // Show delete button only for custom prompts
+        document.getElementById("delete-prompt-btn").style.display = isDefault ? "none" : "inline-block";
+    }
+
+    // Delete the currently selected custom prompt
+    function deleteSelectedPrompt() {
+        const select = document.getElementById("prompt-select");
+        const option = select.options[select.selectedIndex];
+        const templateId = select.value;
+
+        if (option.getAttribute("data-default") === "true") return;
+        if (!confirm("Delete prompt \"" + option.textContent + "\"?")) return;
+
+        fetch("/prompts/" + templateId, { method: "DELETE" })
+            .then(r => {
+                if (r.ok) {
+                    option.remove();
+                    // Select the first remaining option and load its preview
+                    select.selectedIndex = 0;
+                    onPromptChange(select);
+                }
+            });
+    }
+</script>
+{% endblock %}

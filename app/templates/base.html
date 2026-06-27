@@ -6,9 +6,10 @@
     <title>{% block title %}SecondBrain{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="https://unpkg.com/htmx-ext-response-targets@2.0.2/response-targets.js"></script>
     {% block head %}{% endblock %}
 </head>
-<body>
+<body hx-ext="response-targets">
 
     {% include "components/sidebar.html" %}
 

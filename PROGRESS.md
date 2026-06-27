@@ -10,28 +10,34 @@
 - Base template with sidebar + theme toggle
 - Shared CSS (theme system, all component styles)
 - Dashboard route with hardcoded data
-- HTMX script loaded
+- HTMX + response-targets extension loaded
 
-### Phase 2: Sources & Notes CRUD [NEXT]
-- Pydantic models (source, note, tag, prompt_template)
-- Repository protocols (base.py)
-- DuckDB repository implementations
-- Source service with Docling text extraction
-- Source workspace routes + templates
-- HTMX: step navigation, source creation, note save/edit/delete
-- Seed 3 default prompt templates
+### Phase 2: Sources & Notes CRUD [DONE]
+- Pydantic models (source, note, tag, prompt_template, summary)
+- Repository protocols in base.py (SourceRepository, NoteRepository, etc.)
+- DuckDB implementations (source_repo, note_repo, tag_repo, prompt_template_repo, summary_repo)
+- Source service with PyMuPDF text extraction (Docling as fallback)
+- Source workspace routes + templates (3-step flow)
+- HTMX: step navigation, source creation (write/paste/upload), note save/delete
+- Prompt template CRUD: create, delete, preview, duplicate name prevention
+- Default prompts protected from deletion
+- File upload with PDF/DOCX/TXT/HTML support
 
-### Phase 3: Notes List & Search
+### Phase 3: Notes List & Search [NEXT]
 - Search service (keyword + FTS)
 - Notes list routes + templates
 - HTMX search, filters, sort, pagination
 - Bulk select, list/card view toggle
 
-### Phase 4: AI Summarization
-- AIProvider Protocol + ClaudeCLI implementation
-- Prompt builders
-- Summary service + repository
-- Source Workspace step 2: pick template, run summary, display result
+### Phase 4: AI Summarization [DONE]
+- AIProvider Protocol (app/ai/base.py)
+- ClaudeCLI implementation using subprocess with stdin piping
+- shell=True for Windows PATH compatibility
+- Null byte stripping for PDF-extracted text
+- Prompt builder (replaces {source_text} placeholder)
+- Summary service orchestrating: source text + prompt template → Claude → save result
+- Summary result fragment with success/error display
+- Multiple summaries per source with dropdown in Read & Note tab
 
 ### Phase 5: Synapse (Connection Discovery)
 - Connection + concept repositories
@@ -74,8 +80,8 @@
 
 | # | Design File | Template | Status |
 |---|---|---|---|
-| 1 | `page_designs/01_dashboard.html` | `templates/pages/dashboard.html` | Phase 1 done |
-| 2 | `page_designs/02_source_workspace.html` | `templates/pages/source_workspace.html` | Phase 2 |
+| 1 | `page_designs/01_dashboard.html` | `templates/pages/dashboard.html` | Done (Phase 1) |
+| 2 | `page_designs/02_source_workspace.html` | `templates/pages/source_workspace.html` | Done (Phase 2+4) |
 | 3 | `page_designs/03_synapse_review.html` | `templates/pages/synapse_review.html` | Phase 5 |
 | 4 | `page_designs/04_article_workspace.html` | `templates/pages/article_workspace.html` | Phase 6 |
 | 5 | `page_designs/05_notes_list.html` | `templates/pages/notes_list.html` | Phase 3 |
@@ -84,3 +90,11 @@
 | 8 | `page_designs/08_publish_preview.html` | `templates/pages/publish_preview.html` | Phase 9 |
 | 9 | `page_designs/09_public_article.html` | `templates/pages/public_article.html` | Phase 9 |
 | 10 | `page_designs/10_analytics.html` | `templates/pages/analytics.html` | Phase 10 |
+
+## Known Issues / Lessons Learned
+- DuckDB doesn't support CASCADE/SET NULL on foreign keys — handle deletes in app layer
+- DuckDB requires `pytz` for TIMESTAMPTZ handling
+- Windows: uvicorn reloader sometimes doesn't pick up new route files — restart manually
+- Windows: Claude CLI needs `shell=True` in subprocess to find the binary via PATH
+- PDF text can contain null bytes (`\x00`) — strip before sending to Claude
+- Use stdin piping (`input=prompt`) instead of command-line args for long/special-character text

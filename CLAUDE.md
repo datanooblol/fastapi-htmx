@@ -22,11 +22,24 @@ A knowledge management app with AI-powered connections and writing assistance.
 
 ## Key Directories
 - `page_designs/` — 10 HTML mockup files (the design blueprint)
+- `app/models/` — Pydantic schemas (source, note, summary, tag, prompt_template, etc.)
+- `app/repositories/base.py` — Protocol interfaces (swap DB by implementing these)
+- `app/repositories/duckdb/` — DuckDB implementations of all repos
+- `app/ai/` — AI provider pattern (base.py Protocol, claude_cli.py implementation)
+- `app/services/` — Business logic (source_service, summary_service, etc.)
+- `app/routers/` — FastAPI routes (dashboard, sources, prompts, etc.)
 - `app/templates/pages/` — Jinja2 page templates (extend base.html)
 - `app/templates/fragments/` — HTMX partial responses (no base)
 - `app/templates/components/` — Reusable includes (sidebar, cards, etc.)
 - `static/uploads/` — User file uploads (gitignored)
 - `data/` — DuckDB database file (gitignored)
+
+## Windows Notes
+- Claude CLI requires `shell=True` in subprocess to find the binary via PATH
+- Use `encoding="utf-8"` in subprocess calls (Windows defaults to cp1252)
+- PDF text may contain null bytes — strip `\x00` before processing
+- Use stdin piping for subprocess instead of command-line args (avoids shell escaping issues)
+- Uvicorn reloader sometimes doesn't pick up new files — restart manually if routes return 404
 
 ## Running
 ```bash
