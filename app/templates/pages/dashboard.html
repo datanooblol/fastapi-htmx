@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% set active_page = "dashboard" %}
+
+{% block title %}SecondBrain — Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Dashboard</h2>
+    <p>Welcome back. Here's your knowledge at a glance.</p>
+</div>
+
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-label">Total Notes</div>
+        <div class="stat-value">{{ stats.total_notes }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Sources</div>
+        <div class="stat-value">{{ stats.total_sources }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Connections</div>
+        <div class="stat-value">{{ stats.total_connections }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Articles</div>
+        <div class="stat-value">{{ stats.total_articles }}</div>
+    </div>
+</div>
+
+<div class="content-grid full-width" style="margin-bottom: 24px;">
+    <div class="card">
+        <div class="card-header">
+            <h3>Quick Actions</h3>
+        </div>
+        <div class="card-body">
+            <div class="quick-actions">
+                <a class="action-btn" href="/sources/new">
+                    <span class="action-icon">+</span>
+                    New Source
+                </a>
+                <a class="action-btn" href="/sources/new">
+                    <span class="action-icon">&#8593;</span>
+                    Upload Source
+                </a>
+                <a class="action-btn" href="/articles">
+                    <span class="action-icon">&#9998;</span>
+                    Write Article
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-grid">
+    <div class="card">
+        <div class="card-header">
+            <h3>Recent Notes</h3>
+            <a href="/notes">View all</a>
+        </div>
+        <div class="card-body">
+            {% if recent_notes %}
+                {% for note in recent_notes %}
+                <div class="note-item">
+                    <div>
+                        <div class="note-title">{{ note.title }}</div>
+                        <div class="note-meta">{{ note.created_at }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <p>No notes yet. Start by adding a source.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Knowledge Graph</h3>
+            <a href="/graph">Explore</a>
+        </div>
+        <div class="card-body">
+            <div class="graph-preview">
+                [ Graph will render here ]
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-grid full-width">
+    <div class="card">
+        <div class="card-header">
+            <h3>Article Drafts</h3>
+            <a href="/articles">View all</a>
+        </div>
+        <div class="card-body">
+            {% if draft_articles %}
+                {% for article in draft_articles %}
+                <div class="article-item">
+                    <div>
+                        <div class="article-title">{{ article.title }}</div>
+                        <div class="note-meta">{{ article.status }}</div>
+                    </div>
+                    <span class="article-status status-{{ article.status }}">{{ article.status }}</span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <p>No articles yet. Start writing when you're ready.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

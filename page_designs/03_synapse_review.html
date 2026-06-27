@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecondBrain — Synapse Review</title>
+    <style>
+        /* ========================================
+           CSS VARIABLES
+           ======================================== */
+        :root { --sidebar-width: 240px; --transition-speed: 0.2s; }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-card: #1e2a45;
+            --bg-sidebar: #0f1629;
+            --bg-input: #151d30;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6a6a7a;
+            --accent: #4fc3f7;
+            --accent-hover: #81d4fa;
+            --border: #2a2a4a;
+            --success: #66bb6a;
+            --warning: #ffa726;
+            --danger: #ef5350;
+            --tag-bg: #2a3a5a;
+            --strong-bg: #1a3a2a;
+            --strong-border: #2a5a3a;
+            --moderate-bg: #2a3040;
+            --moderate-border: #3a4a6a;
+            --weak-bg: #2a2535;
+            --weak-border: #4a3a5a;
+            --existing-bg: #1e2a35;
+            --existing-border: #2a3a4a;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f5f5f5;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --bg-sidebar: #f0f0f0;
+            --bg-input: #f8f8fc;
+            --text-primary: #1a1a2e;
+            --text-secondary: #555568;
+            --text-muted: #888898;
+            --accent: #1976d2;
+            --accent-hover: #1565c0;
+            --border: #dcdce0;
+            --success: #388e3c;
+            --warning: #f57c00;
+            --danger: #d32f2f;
+            --tag-bg: #e3edf7;
+            --strong-bg: #e8f5e9;
+            --strong-border: #a5d6a7;
+            --moderate-bg: #e3f2fd;
+            --moderate-border: #90caf9;
+            --weak-bg: #f3e5f5;
+            --weak-border: #ce93d8;
+            --existing-bg: #eceff1;
+            --existing-border: #b0bec5;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            min-height: 100vh;
+            transition: background-color var(--transition-speed), color var(--transition-speed);
+        }
+
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { color: var(--accent-hover); }
+
+        /* ========================================
+           SIDEBAR
+           ======================================== */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+        }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
+        .sidebar-header h1 { font-size: 1.25rem; font-weight: 700; color: var(--accent); }
+        .sidebar-header .subtitle { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+        .sidebar-nav { flex: 1; padding: 12px 0; }
+        .nav-section { padding: 0 12px; margin-bottom: 8px; }
+        .nav-section-label {
+            font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em;
+            color: var(--text-muted); padding: 8px 12px 4px;
+        }
+        .nav-item {
+            display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+            border-radius: 6px; color: var(--text-secondary); font-size: 0.875rem;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .nav-item:hover { background-color: var(--bg-card); color: var(--text-primary); }
+        .nav-item.active { background-color: var(--bg-card); color: var(--accent); font-weight: 500; }
+        .nav-icon { width: 18px; text-align: center; font-size: 1rem; }
+        .nav-badge {
+            margin-left: auto; background-color: var(--accent); color: var(--bg-primary);
+            font-size: 0.7rem; padding: 1px 6px; border-radius: 10px; font-weight: 600;
+        }
+        .sidebar-footer { padding: 12px; border-top: 1px solid var(--border); }
+        .theme-toggle {
+            display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+            border-radius: 6px; background: none; border: 1px solid var(--border);
+            color: var(--text-secondary); cursor: pointer; font-size: 0.8rem;
+            width: 100%; transition: all 0.15s;
+        }
+        .theme-toggle:hover { background-color: var(--bg-card); color: var(--text-primary); }
+
+        /* ========================================
+           MAIN
+           ======================================== */
+        .main {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 32px;
+            max-width: 960px;
+        }
+
+        .breadcrumb { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px; }
+        .breadcrumb a { color: var(--text-muted); }
+        .breadcrumb a:hover { color: var(--accent); }
+
+        .page-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 28px;
+        }
+        .page-header h2 { font-size: 1.5rem; font-weight: 700; }
+        .page-header p { color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px; }
+
+        /* ========================================
+           SCAN CONTEXT BAR
+           ======================================== */
+        .scan-context {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 20px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 24px;
+            font-size: 0.85rem;
+        }
+
+        .scan-context .scan-icon {
+            font-size: 1.3rem;
+        }
+
+        .scan-context .scan-info { flex: 1; }
+
+        .scan-context .scan-label {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .scan-context .scan-detail {
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        .scan-stat {
+            text-align: center;
+            padding: 0 16px;
+            border-left: 1px solid var(--border);
+        }
+
+        .scan-stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .scan-stat-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        /* ========================================
+           MODE TABS (Single / Bulk)
+           ======================================== */
+        .mode-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 24px;
+        }
+
+        .mode-tab {
+            padding: 10px 24px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.15s;
+        }
+
+        .mode-tab:first-child { border-radius: 6px 0 0 6px; }
+        .mode-tab:last-child { border-radius: 0 6px 6px 0; }
+        .mode-tab:not(:first-child) { border-left: none; }
+
+        .mode-tab.active {
+            background-color: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            font-weight: 500;
+        }
+
+        .mode-panel { display: none; }
+        .mode-panel.active { display: block; }
+
+        /* ========================================
+           BULK: NOTE SELECTION
+           ======================================== */
+        .note-select-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .note-select-bar label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .note-select-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .note-select-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .note-select-card:hover { border-color: var(--accent); }
+
+        .note-select-card.selected {
+            border-color: var(--accent);
+            background-color: var(--bg-input);
+        }
+
+        .note-select-card input[type="checkbox"] {
+            margin-top: 3px;
+            accent-color: var(--accent);
+        }
+
+        .note-select-title { font-size: 0.8rem; font-weight: 500; }
+        .note-select-meta { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+
+        .note-select-tags {
+            display: flex;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        .tag {
+            font-size: 0.6rem;
+            padding: 1px 6px;
+            border-radius: 3px;
+            background-color: var(--tag-bg);
+            color: var(--accent);
+        }
+
+        /* ========================================
+           CONNECTION CARDS
+           ======================================== */
+        .connections-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .connection-card {
+            border-radius: 10px;
+            padding: 18px 20px;
+            transition: all 0.2s;
+        }
+
+        .connection-card.strong {
+            background-color: var(--strong-bg);
+            border: 1px solid var(--strong-border);
+        }
+
+        .connection-card.moderate {
+            background-color: var(--moderate-bg);
+            border: 1px solid var(--moderate-border);
+        }
+
+        .connection-card.weak {
+            background-color: var(--weak-bg);
+            border: 1px solid var(--weak-border);
+        }
+
+        .connection-card.existing {
+            background-color: var(--existing-bg);
+            border: 1px solid var(--existing-border);
+            opacity: 0.7;
+        }
+
+        .connection-card.accepted {
+            opacity: 0.5;
+        }
+
+        .connection-card.rejected {
+            opacity: 0.3;
+        }
+
+        .connection-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .connection-strength {
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .strength-strong { background-color: var(--success); color: white; }
+        .strength-moderate { background-color: var(--accent); color: white; }
+        .strength-weak { background-color: var(--warning); color: white; }
+        .strength-existing { background-color: var(--text-muted); color: white; }
+
+        .connection-notes {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .connection-note-name {
+            font-size: 0.875rem;
+            font-weight: 500;
+            padding: 6px 12px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            max-width: 280px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .connection-arrow {
+            color: var(--accent);
+            font-size: 1.2rem;
+        }
+
+        .connection-reason {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 12px;
+            padding-left: 12px;
+            border-left: 2px solid var(--border);
+        }
+
+        .connection-tags {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        .connection-type-tag {
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 3px;
+            background-color: var(--tag-bg);
+            color: var(--text-secondary);
+        }
+
+        .connection-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .btn-accept, .btn-reject {
+            padding: 6px 16px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            border: none;
+        }
+
+        .btn-accept {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .btn-accept:hover { filter: brightness(1.1); }
+
+        .btn-reject {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .btn-reject:hover { border-color: var(--danger); color: var(--danger); }
+
+        .connection-status {
+            display: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            padding: 6px 0;
+            text-align: right;
+        }
+
+        .connection-card.accepted .connection-actions { display: none; }
+        .connection-card.accepted .connection-status {
+            display: block;
+            color: var(--success);
+        }
+
+        .connection-card.rejected .connection-actions { display: none; }
+        .connection-card.rejected .connection-status {
+            display: block;
+            color: var(--danger);
+        }
+
+        .connection-card.existing .connection-actions { display: none; }
+        .connection-card.existing .connection-status {
+            display: block;
+            color: var(--text-muted);
+        }
+
+        /* ========================================
+           RESULT SUMMARY
+           ======================================== */
+        .result-summary {
+            display: none;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 24px;
+            margin-top: 24px;
+            text-align: center;
+        }
+
+        .result-summary.visible { display: block; }
+
+        .result-summary h3 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+
+        .result-summary p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .result-stats {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-bottom: 20px;
+        }
+
+        .result-stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .result-stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        /* ========================================
+           BUTTONS
+           ======================================== */
+        .btn-row {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            border: none;
+        }
+
+        .btn-primary { background-color: var(--accent); color: white; }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+
+        .btn-secondary {
+            background-color: var(--bg-card); color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover { color: var(--text-primary); border-color: var(--text-muted); }
+
+        .btn-success { background-color: var(--success); color: white; }
+
+        .btn-ghost { background: none; color: var(--text-secondary); border: 1px solid transparent; }
+        .btn-ghost:hover { color: var(--accent); }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-muted);
+        }
+
+        .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
+        .empty-state p { font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h1>SecondBrain</h1>
+            <div class="subtitle">Your knowledge, connected</div>
+        </div>
+        <div class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-label">Main</div>
+                <a class="nav-item" href="01_dashboard.html">
+                    <span class="nav-icon">&#9632;</span> Dashboard
+                </a>
+                <a class="nav-item" href="02_source_workspace.html">
+                    <span class="nav-icon">&#9998;</span> Notes
+                    <span class="nav-badge">12</span>
+                </a>
+                <a class="nav-item active" href="04_knowledge_graph.html">
+                    <span class="nav-icon">&#9672;</span> Knowledge Graph
+                </a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-label">Writing</div>
+                <a class="nav-item" href="05_articles_list.html">
+                    <span class="nav-icon">&#9776;</span> Articles
+                    <span class="nav-badge">3</span>
+                </a>
+                <a class="nav-item" href="#">
+                    <span class="nav-icon">&#9788;</span> Published
+                </a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-label">Insights</div>
+                <a class="nav-item" href="#">
+                    <span class="nav-icon">&#9636;</span> Analytics
+                </a>
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <span id="theme-icon">&#9790;</span>
+                <span id="theme-label">Light mode</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+        <div class="breadcrumb">
+            <a href="01_dashboard.html">Dashboard</a> / <a href="04_knowledge_graph.html">Knowledge Graph</a> / Synapse
+        </div>
+        <div class="page-header">
+            <div>
+                <h2>Synapse — Connection Review</h2>
+                <p>Review AI-suggested connections between your notes</p>
+            </div>
+        </div>
+
+        <!-- Mode tabs: Single Note / All Notes -->
+        <div class="mode-tabs">
+            <button class="mode-tab active" onclick="switchMode('single')">Single Note</button>
+            <button class="mode-tab" onclick="switchMode('bulk')">All Notes</button>
+        </div>
+
+        <!-- ==========================================
+             SINGLE NOTE MODE
+             ========================================== -->
+        <div class="mode-panel active" id="mode-single">
+
+            <!-- Context: which note is being connected -->
+            <div class="scan-context">
+                <span class="scan-icon">&#9998;</span>
+                <div class="scan-info">
+                    <div class="scan-label">Connecting note</div>
+                    <div class="scan-detail">Attention mechanism details</div>
+                </div>
+                <div class="scan-stat">
+                    <div class="scan-stat-value">11</div>
+                    <div class="scan-stat-label">Notes scanned</div>
+                </div>
+                <div class="scan-stat">
+                    <div class="scan-stat-value">4</div>
+                    <div class="scan-stat-label">Found</div>
+                </div>
+            </div>
+
+            <!-- Connection results -->
+            <div class="connections-list" id="single-connections">
+
+                <!-- Already connected -->
+                <div class="connection-card existing">
+                    <div class="connection-top">
+                        <span class="connection-strength strength-existing">Already Connected</span>
+                    </div>
+                    <div class="connection-notes">
+                        <span class="connection-note-name">Attention mechanism details</span>
+                        <span class="connection-arrow">&#8596;</span>
+                        <span class="connection-note-name">Transformer Architecture Deep Dive</span>
+                    </div>
+                    <div class="connection-reason">
+                        Connected on Jun 27 — Both discuss the core self-attention mechanism and its role in the Transformer architecture.
+                    </div>
+                    <div class="connection-status">Already connected</div>
+                </div>
+
+                <!-- Strong match -->
+                <div class="connection-card strong" id="conn-1">
+                    <div class="connection-top">
+                        <span class="connection-strength strength-strong">Strong</span>
+                    </div>
+                    <div class="connection-notes">
+                        <span class="connection-note-name">Attention mechanism details</span>
+                        <span class="connection-arrow">&#8596;</span>
+                        <span class="connection-note-name">RNN Limitations in Long Sequences</span>
+                    </div>
+                    <div class="connection-reason">
+                        The attention mechanism directly addresses the vanishing gradient problem described in this note. This is a problem &#8594; solution relationship.
+                    </div>
+                    <div class="connection-tags">
+                        <span class="connection-type-tag">problem &#8594; solution</span>
+                        <span class="connection-type-tag">shared concept: sequence modeling</span>
+                    </div>
+                    <div class="connection-actions">
+                        <button class="btn-reject" onclick="rejectConnection('conn-1')">Skip</button>
+                        <button class="btn-accept" onclick="acceptConnection('conn-1')">&#10003; Connect</button>
+                    </div>
+                    <div class="connection-status"></div>
+                </div>
+
+                <!-- Moderate match -->
+                <div class="connection-card moderate" id="conn-2">
+                    <div class="connection-top">
+                        <span class="connection-strength strength-moderate">Moderate</span>
+                    </div>
+                    <div class="connection-notes">
+                        <span class="connection-note-name">Attention mechanism details</span>
+                        <span class="connection-arrow">&#8596;</span>
+                        <span class="connection-note-name">BERT Pre-training Strategies</span>
+                    </div>
+                    <div class="connection-reason">
+                        BERT builds directly on multi-head attention. Understanding the attention mechanism is prerequisite knowledge for BERT's masked language model approach.
+                    </div>
+                    <div class="connection-tags">
+                        <span class="connection-type-tag">prerequisite &#8594; application</span>
+                        <span class="connection-type-tag">shared tag: AI</span>
+                    </div>
+                    <div class="connection-actions">
+                        <button class="btn-reject" onclick="rejectConnection('conn-2')">Skip</button>
+                        <button class="btn-accept" onclick="acceptConnection('conn-2')">&#10003; Connect</button>
+                    </div>
+                    <div class="connection-status"></div>
+                </div>
+
+                <!-- Weak match -->
+                <div class="connection-card weak" id="conn-3">
+                    <div class="connection-top">
+                        <span class="connection-strength strength-weak">Weak</span>
+                    </div>
+                    <div class="connection-notes">
+                        <span class="connection-note-name">Attention mechanism details</span>
+                        <span class="connection-arrow">&#8596;</span>
+                        <span class="connection-note-name">GPU Memory Optimization Techniques</span>
+                    </div>
+                    <div class="connection-reason">
+                        Multi-head attention is computationally expensive and scales quadratically with sequence length. The memory optimization techniques could be applied to make attention more efficient.
+                    </div>
+                    <div class="connection-tags">
+                        <span class="connection-type-tag">practical consideration</span>
+                    </div>
+                    <div class="connection-actions">
+                        <button class="btn-reject" onclick="rejectConnection('conn-3')">Skip</button>
+                        <button class="btn-accept" onclick="acceptConnection('conn-3')">&#10003; Connect</button>
+                    </div>
+                    <div class="connection-status"></div>
+                </div>
+            </div>
+
+            <!-- Batch actions -->
+            <div class="btn-row" id="single-actions">
+                <button class="btn btn-ghost" onclick="skipAll('single-connections')">Skip All</button>
+                <button class="btn btn-secondary" onclick="acceptAll('single-connections')">Accept All New</button>
+                <button class="btn btn-success" onclick="finishReview()">Done — View Graph &#8594;</button>
+            </div>
+
+            <!-- Result summary (shown after all reviewed) -->
+            <div class="result-summary" id="single-result">
+                <h3>Synapse Complete</h3>
+                <p>Finished reviewing connections for "Attention mechanism details"</p>
+                <div class="result-stats">
+                    <div>
+                        <div class="result-stat-value" style="color: var(--success);" id="result-accepted">0</div>
+                        <div class="result-stat-label">Accepted</div>
+                    </div>
+                    <div>
+                        <div class="result-stat-value" style="color: var(--text-muted);" id="result-skipped">0</div>
+                        <div class="result-stat-label">Skipped</div>
+                    </div>
+                    <div>
+                        <div class="result-stat-value" style="color: var(--accent);" id="result-existing">1</div>
+                        <div class="result-stat-label">Already Connected</div>
+                    </div>
+                </div>
+                <div class="btn-row" style="justify-content: center;">
+                    <a class="btn btn-secondary" href="02_source_workspace.html">Back to Notes</a>
+                    <a class="btn btn-success" href="04_knowledge_graph.html">View Graph &#8594;</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             BULK MODE
+             ========================================== -->
+        <div class="mode-panel" id="mode-bulk">
+
+            <!-- Note selection -->
+            <div class="note-select-bar">
+                <label>Select notes to scan:</label>
+                <div>
+                    <button class="btn-ghost" style="font-size:0.8rem; padding:4px 12px; cursor:pointer; background:none; border:1px solid var(--border); border-radius:4px; color:var(--text-secondary);" onclick="selectAllNotes()">Select All</button>
+                </div>
+            </div>
+
+            <div class="note-select-grid" id="note-grid">
+                <label class="note-select-card selected">
+                    <input type="checkbox" checked>
+                    <div>
+                        <div class="note-select-title">Attention mechanism details</div>
+                        <div class="note-select-meta">Jun 27 &middot; 89 words</div>
+                        <div class="note-select-tags">
+                            <span class="tag">AI</span>
+                            <span class="tag">Architecture</span>
+                        </div>
+                    </div>
+                </label>
+                <label class="note-select-card selected">
+                    <input type="checkbox" checked>
+                    <div>
+                        <div class="note-select-title">RNN Limitations in Long Sequences</div>
+                        <div class="note-select-meta">Jun 25 &middot; 156 words</div>
+                        <div class="note-select-tags">
+                            <span class="tag">AI</span>
+                            <span class="tag">RNN</span>
+                        </div>
+                    </div>
+                </label>
+                <label class="note-select-card">
+                    <input type="checkbox">
+                    <div>
+                        <div class="note-select-title">HTMX vs React: Server Patterns</div>
+                        <div class="note-select-meta">Jun 24 &middot; 210 words</div>
+                        <div class="note-select-tags">
+                            <span class="tag">Web Dev</span>
+                            <span class="tag">HTMX</span>
+                        </div>
+                    </div>
+                </label>
+                <label class="note-select-card selected">
+                    <input type="checkbox" checked>
+                    <div>
+                        <div class="note-select-title">BERT Pre-training Strategies</div>
+                        <div class="note-select-meta">Jun 23 &middot; 178 words</div>
+                        <div class="note-select-tags">
+                            <span class="tag">AI</span>
+                            <span class="tag">NLP</span>
+                        </div>
+                    </div>
+                </label>
+                <label class="note-select-card">
+                    <input type="checkbox">
+                    <div>
+                        <div class="note-select-title">DuckDB for Analytics Workloads</div>
+                        <div class="note-select-meta">Jun 22 &middot; 134 words</div>
+                        <div class="note-select-tags">
+                            <span class="tag">Database</span>
+                        </div>
+                    </div>
+                </label>
+                <label class="note-select-card">
+                    <input type="checkbox">
+                    <div>
+                        <div class="note-select-title">GPU Memory Optimization</div>
+                        <div class="note-select-meta">Jun 20 &middot; 98 words</div>
+                        <div class="note-select-tags">
+                            <span class="tag">Performance</span>
+                        </div>
+                    </div>
+                </label>
+            </div>
+
+            <div class="btn-row">
+                <button class="btn btn-primary" onclick="runBulkScan()">Run Synapse on Selected (3 notes) &#8594;</button>
+            </div>
+
+            <!-- Bulk results appear here -->
+            <div id="bulk-results" style="display:none; margin-top: 24px;">
+                <div class="scan-context">
+                    <span class="scan-icon">&#9672;</span>
+                    <div class="scan-info">
+                        <div class="scan-label">Bulk scan complete</div>
+                        <div class="scan-detail">Scanned 3 notes against each other and 9 other notes</div>
+                    </div>
+                    <div class="scan-stat">
+                        <div class="scan-stat-value">5</div>
+                        <div class="scan-stat-label">New found</div>
+                    </div>
+                    <div class="scan-stat">
+                        <div class="scan-stat-value">2</div>
+                        <div class="scan-stat-label">Existing</div>
+                    </div>
+                </div>
+
+                <div class="connections-list" id="bulk-connections">
+                    <div class="connection-card strong" id="bulk-conn-1">
+                        <div class="connection-top">
+                            <span class="connection-strength strength-strong">Strong</span>
+                        </div>
+                        <div class="connection-notes">
+                            <span class="connection-note-name">RNN Limitations</span>
+                            <span class="connection-arrow">&#8596;</span>
+                            <span class="connection-note-name">BERT Pre-training</span>
+                        </div>
+                        <div class="connection-reason">
+                            BERT's bidirectional approach is a direct response to the unidirectional limitations of RNNs discussed in this note.
+                        </div>
+                        <div class="connection-tags">
+                            <span class="connection-type-tag">evolution of approach</span>
+                        </div>
+                        <div class="connection-actions">
+                            <button class="btn-reject" onclick="rejectConnection('bulk-conn-1')">Skip</button>
+                            <button class="btn-accept" onclick="acceptConnection('bulk-conn-1')">&#10003; Connect</button>
+                        </div>
+                        <div class="connection-status"></div>
+                    </div>
+
+                    <div class="connection-card moderate" id="bulk-conn-2">
+                        <div class="connection-top">
+                            <span class="connection-strength strength-moderate">Moderate</span>
+                        </div>
+                        <div class="connection-notes">
+                            <span class="connection-note-name">Attention mechanism details</span>
+                            <span class="connection-arrow">&#8596;</span>
+                            <span class="connection-note-name">BERT Pre-training</span>
+                        </div>
+                        <div class="connection-reason">
+                            BERT uses the encoder side of the Transformer, which relies heavily on the multi-head attention mechanism.
+                        </div>
+                        <div class="connection-tags">
+                            <span class="connection-type-tag">component &#8594; system</span>
+                        </div>
+                        <div class="connection-actions">
+                            <button class="btn-reject" onclick="rejectConnection('bulk-conn-2')">Skip</button>
+                            <button class="btn-accept" onclick="acceptConnection('bulk-conn-2')">&#10003; Connect</button>
+                        </div>
+                        <div class="connection-status"></div>
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn-ghost" onclick="skipAll('bulk-connections')">Skip All</button>
+                    <button class="btn btn-secondary" onclick="acceptAll('bulk-connections')">Accept All</button>
+                    <a class="btn btn-success" href="04_knowledge_graph.html">Done — View Graph &#8594;</a>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- SCRIPTS -->
+    <script>
+        /* Theme Toggle */
+        function toggleTheme() {
+            const html = document.documentElement;
+            const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+            html.setAttribute("data-theme", next);
+            localStorage.setItem("theme", next);
+            updateToggleButton(next);
+        }
+        function updateToggleButton(theme) {
+            document.getElementById("theme-icon").textContent = theme === "dark" ? "☾" : "☀";
+            document.getElementById("theme-label").textContent = theme === "dark" ? "Light mode" : "Dark mode";
+        }
+        (function () {
+            const saved = localStorage.getItem("theme") || "dark";
+            document.documentElement.setAttribute("data-theme", saved);
+            updateToggleButton(saved);
+        })();
+
+        /* Mode Switching (Single / Bulk) */
+        function switchMode(mode) {
+            document.querySelectorAll(".mode-tab").forEach(t => t.classList.remove("active"));
+            document.querySelectorAll(".mode-panel").forEach(p => p.classList.remove("active"));
+            event.target.classList.add("active");
+            document.getElementById("mode-" + mode).classList.add("active");
+        }
+
+        /* Accept / Reject Connections */
+        let accepted = 0, skipped = 0;
+
+        function acceptConnection(id) {
+            const card = document.getElementById(id);
+            card.classList.add("accepted");
+            card.querySelector(".connection-status").textContent = "✓ Connected";
+            accepted++;
+            checkAllReviewed();
+        }
+
+        function rejectConnection(id) {
+            const card = document.getElementById(id);
+            card.classList.add("rejected");
+            card.querySelector(".connection-status").textContent = "Skipped";
+            skipped++;
+            checkAllReviewed();
+        }
+
+        function acceptAll(containerId) {
+            document.querySelectorAll(`#${containerId} .connection-card:not(.existing):not(.accepted):not(.rejected)`).forEach(card => {
+                card.classList.add("accepted");
+                card.querySelector(".connection-status").textContent = "✓ Connected";
+                accepted++;
+            });
+            checkAllReviewed();
+        }
+
+        function skipAll(containerId) {
+            document.querySelectorAll(`#${containerId} .connection-card:not(.existing):not(.accepted):not(.rejected)`).forEach(card => {
+                card.classList.add("rejected");
+                card.querySelector(".connection-status").textContent = "Skipped";
+                skipped++;
+            });
+            checkAllReviewed();
+        }
+
+        function checkAllReviewed() {
+            const pending = document.querySelectorAll("#single-connections .connection-card:not(.existing):not(.accepted):not(.rejected)");
+            if (pending.length === 0) {
+                document.getElementById("result-accepted").textContent = accepted;
+                document.getElementById("result-skipped").textContent = skipped;
+                document.getElementById("single-result").classList.add("visible");
+            }
+        }
+
+        function finishReview() {
+            acceptAll("single-connections");
+        }
+
+        /* Bulk: Note selection toggle */
+        document.querySelectorAll(".note-select-card").forEach(card => {
+            card.addEventListener("change", function () {
+                card.classList.toggle("selected", card.querySelector("input").checked);
+                updateBulkButton();
+            });
+        });
+
+        function selectAllNotes() {
+            document.querySelectorAll(".note-select-card input").forEach(cb => {
+                cb.checked = true;
+                cb.closest(".note-select-card").classList.add("selected");
+            });
+            updateBulkButton();
+        }
+
+        function updateBulkButton() {
+            const count = document.querySelectorAll(".note-select-card input:checked").length;
+            document.querySelector("#mode-bulk .btn-primary").textContent =
+                `Run Synapse on Selected (${count} notes) →`;
+        }
+
+        function runBulkScan() {
+            document.getElementById("bulk-results").style.display = "block";
+            document.getElementById("bulk-results").scrollIntoView({ behavior: "smooth" });
+        }
+    </script>
+
+</body>
+</html>

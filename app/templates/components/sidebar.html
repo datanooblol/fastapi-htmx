@@ -1,0 +1,45 @@
+<nav class="sidebar">
+    <div class="sidebar-header">
+        <h1>SecondBrain</h1>
+        <div class="subtitle">Your knowledge, connected</div>
+    </div>
+
+    <div class="sidebar-nav">
+        <div class="nav-section">
+            <div class="nav-section-label">Main</div>
+            <a class="nav-item {{ 'active' if active_page == 'dashboard' }}" href="/">
+                <span class="nav-icon">&#9632;</span> Dashboard
+            </a>
+            <a class="nav-item {{ 'active' if active_page == 'notes' }}" href="/notes">
+                <span class="nav-icon">&#9998;</span> Notes
+            </a>
+            <a class="nav-item {{ 'active' if active_page == 'graph' }}" href="/graph">
+                <span class="nav-icon">&#9672;</span> Knowledge Graph
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-label">Writing</div>
+            <a class="nav-item {{ 'active' if active_page == 'articles' }}" href="/articles">
+                <span class="nav-icon">&#9776;</span> Articles
+            </a>
+            <a class="nav-item {{ 'active' if active_page == 'published' }}" href="/published">
+                <span class="nav-icon">&#9788;</span> Published
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-label">Insights</div>
+            <a class="nav-item {{ 'active' if active_page == 'analytics' }}" href="/analytics">
+                <span class="nav-icon">&#9636;</span> Analytics
+            </a>
+        </div>
+    </div>
+
+    <div class="sidebar-footer">
+        <button class="theme-toggle" onclick="toggleTheme()">
+            <span id="theme-icon">&#9790;</span>
+            <span id="theme-label">Light mode</span>
+        </button>
+    </div>
+</nav>

@@ -1,0 +1,2637 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecondBrain — Article Workspace</title>
+    <style>
+        /* ========================================
+           CSS VARIABLES
+           ======================================== */
+        :root { --sidebar-width: 240px; --transition-speed: 0.2s; }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-card: #1e2a45;
+            --bg-sidebar: #0f1629;
+            --bg-input: #151d30;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6a6a7a;
+            --accent: #4fc3f7;
+            --accent-hover: #81d4fa;
+            --border: #2a2a4a;
+            --success: #66bb6a;
+            --warning: #ffa726;
+            --danger: #ef5350;
+            --tag-bg: #2a3a5a;
+            --ai-bg: #1a2035;
+            --ai-user-bg: #2a3a5a;
+            --ai-assistant-bg: #1e2a40;
+            --section-written: #1a3a2a;
+            --section-writing: #2a3040;
+            --section-outline: #1e2a45;
+            --drag-hover: #2a3a5a;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f5f5f5;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --bg-sidebar: #f0f0f0;
+            --bg-input: #f8f8fc;
+            --text-primary: #1a1a2e;
+            --text-secondary: #555568;
+            --text-muted: #888898;
+            --accent: #1976d2;
+            --accent-hover: #1565c0;
+            --border: #dcdce0;
+            --success: #388e3c;
+            --warning: #f57c00;
+            --danger: #d32f2f;
+            --tag-bg: #e3edf7;
+            --ai-bg: #f8f9fc;
+            --ai-user-bg: #e3edf7;
+            --ai-assistant-bg: #f0f4f8;
+            --section-written: #e8f5e9;
+            --section-writing: #e3f2fd;
+            --section-outline: #ffffff;
+            --drag-hover: #e3edf7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            min-height: 100vh;
+            transition: background-color var(--transition-speed), color var(--transition-speed);
+        }
+
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { color: var(--accent-hover); }
+
+        /* ========================================
+           SIDEBAR
+           ======================================== */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+        }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
+        .sidebar-header h1 { font-size: 1.25rem; font-weight: 700; color: var(--accent); }
+        .sidebar-header .subtitle { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+        .sidebar-nav { flex: 1; padding: 12px 0; }
+        .nav-section { padding: 0 12px; margin-bottom: 8px; }
+        .nav-section-label {
+            font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em;
+            color: var(--text-muted); padding: 8px 12px 4px;
+        }
+        .nav-item {
+            display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+            border-radius: 6px; color: var(--text-secondary); font-size: 0.875rem;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .nav-item:hover { background-color: var(--bg-card); color: var(--text-primary); }
+        .nav-item.active { background-color: var(--bg-card); color: var(--accent); font-weight: 500; }
+        .nav-icon { width: 18px; text-align: center; font-size: 1rem; }
+        .nav-badge {
+            margin-left: auto; background-color: var(--accent); color: var(--bg-primary);
+            font-size: 0.7rem; padding: 1px 6px; border-radius: 10px; font-weight: 600;
+        }
+        .sidebar-footer { padding: 12px; border-top: 1px solid var(--border); }
+        .theme-toggle {
+            display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+            border-radius: 6px; background: none; border: 1px solid var(--border);
+            color: var(--text-secondary); cursor: pointer; font-size: 0.8rem;
+            width: 100%; transition: all 0.15s;
+        }
+        .theme-toggle:hover { background-color: var(--bg-card); color: var(--text-primary); }
+
+        /* ========================================
+           WORKSPACE LAYOUT
+           ======================================== */
+        .workspace-container {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ========================================
+           LEFT PANEL: REFERENCES
+           ======================================== */
+        .refs-panel {
+            width: 300px;
+            min-width: 260px;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-secondary);
+            transition: width 0.3s;
+        }
+
+        .workspace-container.ai-open .refs-panel {
+            width: 240px;
+            min-width: 200px;
+        }
+
+        .refs-header {
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .refs-header h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 10px; }
+
+        .refs-tabs {
+            display: flex;
+            gap: 0;
+        }
+
+        .refs-tab {
+            padding: 6px 14px;
+            font-size: 0.75rem;
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .refs-tab:first-child { border-radius: 4px 0 0 4px; }
+        .refs-tab:last-child { border-radius: 0 4px 4px 0; }
+        .refs-tab:not(:first-child) { border-left: none; }
+        .refs-tab.active { background-color: var(--accent); border-color: var(--accent); color: white; }
+
+        .refs-search {
+            padding: 10px 18px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .refs-search input {
+            width: 100%;
+            padding: 7px 10px;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            font-family: inherit;
+        }
+
+        .refs-search input:focus { outline: none; border-color: var(--accent); }
+
+        .refs-filter {
+            padding: 8px 18px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .refs-filter select {
+            width: 100%;
+            padding: 5px 8px;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 0.75rem;
+            font-family: inherit;
+        }
+
+        .refs-filter select:focus { outline: none; border-color: var(--accent); }
+
+        .refs-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .refs-panel-content { display: none; }
+        .refs-panel-content.active { display: block; }
+
+        /* Reference cards */
+        .ref-card {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+            background-color: var(--bg-card);
+        }
+
+        .ref-card:hover { border-color: var(--accent); }
+
+        .ref-card-top {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+
+        .ref-type-icon {
+            font-size: 0.7rem;
+            padding: 1px 6px;
+            border-radius: 3px;
+            background-color: var(--tag-bg);
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .ref-type-icon.note { color: var(--accent); }
+        .ref-type-icon.summary { color: var(--warning); }
+        .ref-type-icon.source { color: var(--success); }
+
+        .ref-title { font-size: 0.8rem; font-weight: 500; }
+        .ref-preview {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+            margin-bottom: 6px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .ref-tags {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+
+        .tag {
+            font-size: 0.6rem;
+            padding: 1px 6px;
+            border-radius: 3px;
+            background-color: var(--tag-bg);
+            color: var(--accent);
+        }
+
+        .ref-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .ref-action-btn {
+            padding: 3px 10px;
+            font-size: 0.65rem;
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .ref-action-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+        /* Attach dropdown */
+        .attach-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .attach-menu {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 4px;
+            min-width: 180px;
+            z-index: 50;
+            margin-bottom: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .attach-menu.visible { display: block; }
+
+        .attach-menu-item {
+            padding: 6px 10px;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.1s;
+        }
+
+        .attach-menu-item:hover {
+            background-color: var(--bg-input);
+            color: var(--accent);
+        }
+
+        /* Graph mini */
+        .graph-mini-placeholder {
+            width: 100%;
+            height: 300px;
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin: 12px 0;
+        }
+
+        /* ========================================
+           CENTER PANEL: EDITOR
+           ======================================== */
+        .editor-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .editor-topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 24px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .editor-topbar .breadcrumb { font-size: 0.75rem; color: var(--text-muted); }
+        .editor-topbar .breadcrumb a { color: var(--text-muted); }
+        .editor-topbar .breadcrumb a:hover { color: var(--accent); }
+
+        .editor-topbar-actions { display: flex; gap: 8px; align-items: center; }
+
+        .status-indicator { font-size: 0.7rem; color: var(--text-muted); padding-right: 8px; }
+
+        .btn-icon {
+            padding: 6px 12px;
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-icon:hover { color: var(--accent); border-color: var(--accent); }
+        .btn-icon.active { color: var(--accent); border-color: var(--accent); background-color: var(--bg-card); }
+
+        /* Article header area */
+        .editor-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 32px;
+        }
+
+        .article-header {
+            max-width: 720px;
+            margin: 0 auto 24px;
+        }
+
+        .article-title-input {
+            width: 100%;
+            padding: 0;
+            margin-bottom: 8px;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.6rem;
+            font-weight: 700;
+            font-family: inherit;
+            line-height: 1.3;
+        }
+
+        .article-title-input:focus { outline: none; }
+        .article-title-input::placeholder { color: var(--text-muted); }
+
+        .article-subtitle-input {
+            width: 100%;
+            padding: 0;
+            margin-bottom: 16px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+
+        .article-subtitle-input:focus { outline: none; }
+        .article-subtitle-input::placeholder { color: var(--text-muted); }
+
+        /* ========================================
+           SECTION BLOCKS
+           ======================================== */
+        .sections-container {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        .section-block {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 12px;
+            overflow: visible;
+            transition: all 0.2s;
+            background-color: var(--section-outline);
+            position: relative;
+        }
+
+        .section-block.status-written {
+            border-left: 3px solid var(--success);
+            background-color: var(--section-written);
+        }
+
+        .section-block.status-writing {
+            border-left: 3px solid var(--accent);
+            background-color: var(--section-writing);
+        }
+
+        .section-block.status-ai-drafted {
+            border-left: 3px solid var(--warning);
+        }
+
+        /* Section header (always visible) */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background-color 0.1s;
+        }
+
+        .section-header:hover { background-color: var(--drag-hover); }
+
+        .section-drag-handle {
+            color: var(--text-muted);
+            cursor: grab;
+            font-size: 0.9rem;
+            padding: 0 4px;
+        }
+
+        .section-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .section-status-dot.outline { border: 1.5px solid var(--text-muted); background: none; }
+        .section-status-dot.writing { background-color: var(--accent); }
+        .section-status-dot.written { background-color: var(--success); }
+        .section-status-dot.ai-drafted { background-color: var(--warning); }
+
+        .section-title-display {
+            flex: 1;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .section-ref-count {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            padding: 2px 8px;
+            background-color: var(--tag-bg);
+            border-radius: 10px;
+        }
+
+        .section-word-count {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            padding: 2px 8px;
+            background-color: var(--tag-bg);
+            border-radius: 10px;
+        }
+
+        .section-status-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .section-toggle {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            transition: transform 0.2s;
+        }
+
+        .section-block.expanded .section-toggle { transform: rotate(180deg); }
+
+        /* Section body (collapsible) */
+        .section-body {
+            display: none;
+            padding: 0 16px 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .section-block.expanded .section-body { display: block; }
+
+        /* Outline text */
+        .section-outline {
+            padding: 12px;
+            margin: 12px 0;
+            background-color: var(--bg-input);
+            border-radius: 6px;
+            border-left: 3px solid var(--accent);
+        }
+
+        .section-outline-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .section-outline-text {
+            width: 100%;
+            padding: 0;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-family: inherit;
+            line-height: 1.6;
+            resize: none;
+            min-height: 40px;
+        }
+
+        .section-outline-text:focus { outline: none; }
+        .section-outline-text::placeholder { color: var(--text-muted); }
+
+        /* Section refs */
+        .section-refs {
+            margin: 12px 0;
+        }
+
+        .section-refs-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .section-ref-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .section-ref-chip {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            background-color: var(--tag-bg);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            font-size: 0.7rem;
+            color: var(--accent);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .section-ref-chip:hover { border-color: var(--accent); }
+
+        .section-ref-chip .ref-chip-type {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+        }
+
+        .section-ref-chip .ref-chip-remove {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.75rem;
+            padding: 0 2px;
+            margin-left: 2px;
+        }
+
+        .section-ref-chip .ref-chip-remove:hover { color: var(--danger); }
+
+        .section-ref-empty {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-style: italic;
+            padding: 6px 0;
+        }
+
+        /* Inline reference picker (opens inside a section) */
+        .ref-picker-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            background: none;
+            border: 1px dashed var(--border);
+            border-radius: 5px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.7rem;
+            transition: all 0.15s;
+        }
+
+        .ref-picker-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+        .ref-picker {
+            display: none;
+            margin-top: 10px;
+            padding: 12px;
+            background-color: var(--bg-input);
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+        }
+
+        .ref-picker.visible { display: block; }
+
+        .ref-picker-search {
+            width: 100%;
+            padding: 7px 10px;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            font-family: inherit;
+            margin-bottom: 8px;
+        }
+
+        .ref-picker-search:focus { outline: none; border-color: var(--accent); }
+
+        .ref-picker-results {
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .ref-picker-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.1s;
+            font-size: 0.75rem;
+        }
+
+        .ref-picker-item:hover { background-color: var(--bg-card); }
+
+        .ref-picker-item-type {
+            font-size: 0.6rem;
+            padding: 1px 6px;
+            border-radius: 3px;
+            background-color: var(--tag-bg);
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .ref-picker-item-name {
+            flex: 1;
+            color: var(--text-secondary);
+        }
+
+        .ref-picker-item-add {
+            color: var(--accent);
+            font-size: 0.8rem;
+            opacity: 0;
+            transition: opacity 0.1s;
+        }
+
+        .ref-picker-item:hover .ref-picker-item-add { opacity: 1; }
+
+        .ref-picker-close {
+            display: block;
+            margin-top: 8px;
+            text-align: right;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+
+        .ref-picker-close:hover { color: var(--accent); }
+
+        /* Section content editor */
+        .section-content-area { margin: 12px 0; }
+
+        .section-toolbar {
+            display: flex;
+            gap: 3px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-btn {
+            padding: 3px 8px;
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.7rem;
+            transition: all 0.15s;
+        }
+
+        .toolbar-btn:hover { color: var(--text-primary); border-color: var(--text-muted); }
+
+        .section-editor {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-family: inherit;
+            line-height: 1.8;
+            resize: vertical;
+        }
+
+        .section-editor:focus { outline: none; border-color: var(--accent); }
+        .section-editor::placeholder { color: var(--text-muted); }
+
+        /* AI drafted content display */
+        .section-ai-draft {
+            padding: 12px;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--warning);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            position: relative;
+        }
+
+        .section-ai-draft-label {
+            display: inline-block;
+            font-size: 0.6rem;
+            padding: 1px 8px;
+            background-color: var(--warning);
+            color: white;
+            border-radius: 3px;
+            margin-bottom: 8px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .section-ai-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+            justify-content: flex-end;
+        }
+
+        /* Section action buttons */
+        .section-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .section-btn {
+            padding: 5px 14px;
+            font-size: 0.75rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.15s;
+            border: 1px solid var(--border);
+            background: none;
+            color: var(--text-secondary);
+        }
+
+        .section-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+        .section-btn.primary {
+            background-color: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .section-btn.primary:hover { background-color: var(--accent-hover); }
+
+        .section-btn.success {
+            background-color: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .section-btn.warning {
+            background-color: var(--warning);
+            border-color: var(--warning);
+            color: white;
+        }
+
+        .section-btn.danger:hover { color: var(--danger); border-color: var(--danger); }
+
+        /* AI Actions dropdown */
+        .ai-actions-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .ai-actions-btn {
+            padding: 5px 14px;
+            font-size: 0.75rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.15s;
+            border: 1px solid var(--accent);
+            background-color: var(--accent);
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .ai-actions-btn:hover { background-color: var(--accent-hover); }
+
+        .ai-actions-menu {
+            display: none;
+            position: fixed;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px;
+            min-width: 260px;
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 200;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+
+        .ai-actions-menu.visible { display: block; }
+
+        .ai-actions-menu-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            padding: 6px 10px 4px;
+        }
+
+        .ai-actions-menu-sep {
+            height: 1px;
+            background-color: var(--border);
+            margin: 4px 6px;
+        }
+
+        .ai-action-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.1s;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .ai-action-item:hover {
+            background-color: var(--bg-input);
+            color: var(--accent);
+        }
+
+        .ai-action-icon {
+            width: 18px;
+            text-align: center;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+
+        .ai-action-info { flex: 1; }
+
+        .ai-action-name {
+            font-weight: 500;
+        }
+
+        .ai-action-desc {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 1px;
+        }
+
+        /* Add section button */
+        .add-section-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px;
+            border: 2px dashed var(--border);
+            border-radius: 10px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.15s;
+            margin-bottom: 12px;
+        }
+
+        .add-section-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Editor footer */
+        .editor-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 24px;
+            border-top: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .footer-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .editor-footer-actions { display: flex; gap: 8px; }
+
+        .btn {
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            border: none;
+        }
+
+        .btn-primary { background-color: var(--accent); color: white; }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-secondary {
+            background-color: var(--bg-card); color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover { color: var(--text-primary); border-color: var(--text-muted); }
+        .btn-success { background-color: var(--success); color: white; }
+
+        /* ========================================
+           RIGHT PANEL: AI COMPANION
+           ======================================== */
+        .ai-panel {
+            width: 0;
+            overflow: hidden;
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            background-color: var(--ai-bg);
+            transition: width 0.3s ease;
+        }
+
+        .workspace-container.ai-open .ai-panel { width: 340px; }
+
+        .ai-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 14px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+        }
+
+        .ai-header h3 { font-size: 0.9rem; font-weight: 600; white-space: nowrap; }
+
+        .ai-close {
+            background: none; border: none; color: var(--text-muted);
+            cursor: pointer; font-size: 1.1rem; padding: 2px 6px;
+        }
+
+        .ai-close:hover { color: var(--text-primary); }
+
+        .ai-context-bar {
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            background-color: var(--bg-input);
+            flex-shrink: 0;
+        }
+
+        .ai-context-bar strong { color: var(--text-secondary); }
+
+        .ai-quick-actions {
+            display: flex; gap: 6px; padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap; flex-shrink: 0;
+        }
+
+        .ai-chip {
+            padding: 4px 10px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.65rem;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .ai-chip:hover { border-color: var(--accent); color: var(--accent); }
+
+        .ai-messages {
+            flex: 1; overflow-y: auto; padding: 16px;
+            display: flex; flex-direction: column; gap: 12px;
+        }
+
+        .ai-msg {
+            padding: 10px 14px; border-radius: 8px;
+            font-size: 0.8rem; line-height: 1.6; max-width: 95%;
+        }
+
+        .ai-msg.user {
+            background-color: var(--ai-user-bg);
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+        }
+
+        .ai-msg.assistant {
+            background-color: var(--ai-assistant-bg);
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+        }
+
+        .ai-msg .ai-suggestion {
+            margin-top: 10px; padding: 10px;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.8rem; line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .ai-msg .ai-apply-row {
+            display: flex; gap: 6px; margin-top: 8px; justify-content: flex-end;
+        }
+
+        .ai-apply-btn {
+            padding: 4px 12px; font-size: 0.7rem; border-radius: 4px;
+            cursor: pointer; border: none; transition: all 0.15s;
+        }
+
+        .ai-apply-btn.accept { background-color: var(--success); color: white; }
+        .ai-apply-btn.reject { background: none; border: 1px solid var(--border); color: var(--text-muted); }
+        .ai-apply-btn:hover { filter: brightness(1.1); }
+
+        .ai-input-area { padding: 12px 16px; border-top: 1px solid var(--border); flex-shrink: 0; }
+
+        .ai-input-row { display: flex; gap: 8px; }
+
+        .ai-input {
+            flex: 1; padding: 8px 12px;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.8rem; font-family: inherit;
+        }
+
+        .ai-input:focus { outline: none; border-color: var(--accent); }
+
+        .ai-send {
+            padding: 8px 14px; background-color: var(--accent);
+            border: none; border-radius: 6px; color: white;
+            cursor: pointer; font-size: 0.8rem; transition: all 0.15s;
+        }
+
+        .ai-send:hover { background-color: var(--accent-hover); }
+
+        .ai-input-hint {
+            font-size: 0.65rem; color: var(--text-muted); margin-top: 6px; text-align: center;
+        }
+
+        /* ========================================
+           NOTE PREVIEW MODAL
+           ======================================== */
+        .modal-overlay {
+            display: none; position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 200; align-items: center; justify-content: center;
+        }
+
+        .modal-overlay.visible { display: flex; }
+
+        .modal-box {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            width: 560px; max-height: 70vh;
+            overflow: hidden; display: flex; flex-direction: column;
+        }
+
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px 20px; border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h3 { font-size: 0.95rem; font-weight: 600; }
+
+        .modal-body {
+            padding: 20px; overflow-y: auto;
+            font-size: 0.85rem; line-height: 1.7; color: var(--text-secondary);
+        }
+
+        .modal-footer {
+            display: flex; justify-content: flex-end; gap: 8px;
+            padding: 12px 20px; border-top: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h1>SecondBrain</h1>
+            <div class="subtitle">Your knowledge, connected</div>
+        </div>
+        <div class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-label">Main</div>
+                <a class="nav-item" href="01_dashboard.html"><span class="nav-icon">&#9632;</span> Dashboard</a>
+                <a class="nav-item" href="02_source_workspace.html"><span class="nav-icon">&#9998;</span> Notes <span class="nav-badge">12</span></a>
+                <a class="nav-item" href="#"><span class="nav-icon">&#9672;</span> Knowledge Graph</a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-label">Writing</div>
+                <a class="nav-item active" href="04_article_workspace.html"><span class="nav-icon">&#9776;</span> Articles <span class="nav-badge">3</span></a>
+                <a class="nav-item" href="#"><span class="nav-icon">&#9788;</span> Published</a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-label">Insights</div>
+                <a class="nav-item" href="#"><span class="nav-icon">&#9636;</span> Analytics</a>
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <span id="theme-icon">&#9790;</span>
+                <span id="theme-label">Light mode</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ==========================================
+         WORKSPACE
+         ========================================== -->
+    <div class="workspace-container" id="workspace">
+
+        <!-- LEFT: References Panel -->
+        <div class="refs-panel">
+            <div class="refs-header">
+                <h3>References</h3>
+                <div class="refs-tabs">
+                    <button class="refs-tab active" onclick="switchRefsTab('notes')">Notes</button>
+                    <button class="refs-tab" onclick="switchRefsTab('summaries')">Summaries</button>
+                    <button class="refs-tab" onclick="switchRefsTab('sources')">Sources</button>
+                </div>
+            </div>
+
+            <div class="refs-search">
+                <input type="text" placeholder="Search references...">
+            </div>
+
+            <div class="refs-body">
+                <!-- Notes -->
+                <div class="refs-panel-content active" id="refs-notes">
+                    <div class="ref-card" onclick="previewRef('Attention mechanism details', 'Multi-head attention runs several attention operations in parallel, each learning different relationship patterns. The key insight is that different heads can attend to different types of relationships in the input sequence.')">
+                        <div class="ref-card-top">
+                            <span class="ref-type-icon note">Note</span>
+                            <span class="ref-title">Attention mechanism details</span>
+                        </div>
+                        <div class="ref-preview">Multi-head attention runs several attention operations in parallel, each learning different relationship patterns...</div>
+                        <div class="ref-tags">
+                            <span class="tag">AI</span>
+                            <span class="tag">Architecture</span>
+                        </div>
+                        <div class="ref-actions">
+                            <button class="ref-action-btn" onclick="event.stopPropagation(); previewRef('Attention mechanism details', 'Multi-head attention runs several...')">Preview</button>
+                            <div class="attach-dropdown">
+                                <button class="ref-action-btn" onclick="event.stopPropagation(); toggleAttachMenu(this)">Attach to section &#9662;</button>
+                                <div class="attach-menu">
+                                    <div class="attach-menu-item" onclick="event.stopPropagation(); attachToSection(this, 0, 'Attention mechanism details', 'note')">&#167; Introduction</div>
+                                    <div class="attach-menu-item" onclick="event.stopPropagation(); attachToSection(this, 1, 'Attention mechanism details', 'note')">&#167; Self-Attention Mechanism</div>
+                                    <div class="attach-menu-item" onclick="event.stopPropagation(); attachToSection(this, 2, 'Attention mechanism details', 'note')">&#167; Multi-Head Attention</div>
+                                    <div class="attach-menu-item" onclick="event.stopPropagation(); attachToSection(this, 3, 'Attention mechanism details', 'note')">&#167; Conclusion</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ref-card">
+                        <div class="ref-card-top">
+                            <span class="ref-type-icon note">Note</span>
+                            <span class="ref-title">RNN Limitations in Long Sequences</span>
+                        </div>
+                        <div class="ref-preview">Recurrent networks struggle with vanishing gradients when sequences grow long, making it hard to...</div>
+                        <div class="ref-tags">
+                            <span class="tag">AI</span>
+                            <span class="tag">RNN</span>
+                        </div>
+                        <div class="ref-actions">
+                            <button class="ref-action-btn" onclick="event.stopPropagation();">Preview</button>
+                            <div class="attach-dropdown">
+                                <button class="ref-action-btn" onclick="event.stopPropagation(); toggleAttachMenu(this)">Attach to section &#9662;</button>
+                                <div class="attach-menu">
+                                    <div class="attach-menu-item" onclick="event.stopPropagation(); attachToSection(this, 0, 'RNN Limitations', 'note')">&#167; Introduction</div>
+                                    <div class="attach-menu-item" onclick="event.stopPropagation(); attachToSection(this, 1, 'RNN Limitations', 'note')">&#167; Self-Attention Mechanism</div>
+                                    <div class="attach-menu-item" onclick="event.stopPropagation(); attachToSection(this, 2, 'RNN Limitations', 'note')">&#167; Multi-Head Attention</div>
+                                    <div class="attach-menu-item" onclick="event.stopPropagation(); attachToSection(this, 3, 'RNN Limitations', 'note')">&#167; Conclusion</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ref-card">
+                        <div class="ref-card-top">
+                            <span class="ref-type-icon note">Note</span>
+                            <span class="ref-title">BERT Pre-training Strategies</span>
+                        </div>
+                        <div class="ref-preview">BERT uses masked language modeling and next sentence prediction to learn bidirectional representations...</div>
+                        <div class="ref-tags">
+                            <span class="tag">AI</span>
+                            <span class="tag">NLP</span>
+                        </div>
+                        <div class="ref-actions">
+                            <button class="ref-action-btn" onclick="event.stopPropagation();">Preview</button>
+                            <div class="attach-dropdown">
+                                <button class="ref-action-btn" onclick="event.stopPropagation(); toggleAttachMenu(this)">Attach to section &#9662;</button>
+                                <div class="attach-menu">
+                                    <div class="attach-menu-item">&#167; Introduction</div>
+                                    <div class="attach-menu-item">&#167; Self-Attention Mechanism</div>
+                                    <div class="attach-menu-item">&#167; Multi-Head Attention</div>
+                                    <div class="attach-menu-item">&#167; Conclusion</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ref-card">
+                        <div class="ref-card-top">
+                            <span class="ref-type-icon note">Note</span>
+                            <span class="ref-title">HTMX vs React: Server Patterns</span>
+                        </div>
+                        <div class="ref-preview">HTMX returns HTML from the server while React uses JSON APIs for data fetching...</div>
+                        <div class="ref-tags"><span class="tag">Web Dev</span></div>
+                        <div class="ref-actions">
+                            <button class="ref-action-btn" onclick="event.stopPropagation();">Preview</button>
+                            <div class="attach-dropdown">
+                                <button class="ref-action-btn" onclick="event.stopPropagation(); toggleAttachMenu(this)">Attach to section &#9662;</button>
+                                <div class="attach-menu">
+                                    <div class="attach-menu-item">&#167; Introduction</div>
+                                    <div class="attach-menu-item">&#167; Self-Attention Mechanism</div>
+                                    <div class="attach-menu-item">&#167; Multi-Head Attention</div>
+                                    <div class="attach-menu-item">&#167; Conclusion</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summaries -->
+                <div class="refs-panel-content" id="refs-summaries">
+                    <div class="ref-card">
+                        <div class="ref-card-top">
+                            <span class="ref-type-icon summary">Summary</span>
+                            <span class="ref-title">Default Summary — Transformer Paper</span>
+                        </div>
+                        <div class="ref-preview">The Transformer architecture replaced RNN/CNN-based models with a pure attention mechanism, enabling better capture of long-range dependencies...</div>
+                        <div class="ref-actions">
+                            <button class="ref-action-btn" onclick="event.stopPropagation();">Preview</button>
+                            <div class="attach-dropdown">
+                                <button class="ref-action-btn" onclick="event.stopPropagation(); toggleAttachMenu(this)">Attach to section &#9662;</button>
+                                <div class="attach-menu">
+                                    <div class="attach-menu-item">&#167; Introduction</div>
+                                    <div class="attach-menu-item">&#167; Self-Attention Mechanism</div>
+                                    <div class="attach-menu-item">&#167; Multi-Head Attention</div>
+                                    <div class="attach-menu-item">&#167; Conclusion</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ref-card">
+                        <div class="ref-card-top">
+                            <span class="ref-type-icon summary">Summary</span>
+                            <span class="ref-title">Key Concepts — Transformer Paper</span>
+                        </div>
+                        <div class="ref-preview">Self-Attention: mechanism that lets each position attend to all other positions. Multi-Head Attention: running multiple attention ops in parallel...</div>
+                        <div class="ref-actions">
+                            <button class="ref-action-btn" onclick="event.stopPropagation();">Preview</button>
+                            <div class="attach-dropdown">
+                                <button class="ref-action-btn" onclick="event.stopPropagation(); toggleAttachMenu(this)">Attach to section &#9662;</button>
+                                <div class="attach-menu">
+                                    <div class="attach-menu-item">&#167; Introduction</div>
+                                    <div class="attach-menu-item">&#167; Self-Attention Mechanism</div>
+                                    <div class="attach-menu-item">&#167; Multi-Head Attention</div>
+                                    <div class="attach-menu-item">&#167; Conclusion</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sources -->
+                <div class="refs-panel-content" id="refs-sources">
+                    <div class="ref-card">
+                        <div class="ref-card-top">
+                            <span class="ref-type-icon source">Source</span>
+                            <span class="ref-title">transformer-paper.pdf</span>
+                        </div>
+                        <div class="ref-preview">Attention Is All You Need — Vaswani et al., 2017. Original paper introducing the Transformer architecture...</div>
+                        <div class="ref-actions">
+                            <button class="ref-action-btn" onclick="event.stopPropagation();">Preview</button>
+                            <div class="attach-dropdown">
+                                <button class="ref-action-btn" onclick="event.stopPropagation(); toggleAttachMenu(this)">Attach to section &#9662;</button>
+                                <div class="attach-menu">
+                                    <div class="attach-menu-item">&#167; Introduction</div>
+                                    <div class="attach-menu-item">&#167; Self-Attention Mechanism</div>
+                                    <div class="attach-menu-item">&#167; Multi-Head Attention</div>
+                                    <div class="attach-menu-item">&#167; Conclusion</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER: Article Editor -->
+        <div class="editor-panel">
+            <div class="editor-topbar">
+                <div class="breadcrumb">
+                    <a href="01_dashboard.html">Dashboard</a> /
+                    <a href="#">Articles</a> / Edit
+                </div>
+                <div class="editor-topbar-actions">
+                    <span class="status-indicator">&#10003; Saved</span>
+                    <button class="btn-icon" onclick="toggleAI()" id="ai-toggle-btn">
+                        &#9672; Muse
+                    </button>
+                </div>
+            </div>
+
+            <div class="editor-body">
+
+                <!-- Article title & subtitle -->
+                <div class="article-header">
+                    <input type="text" class="article-title-input"
+                           placeholder="Article title..."
+                           value="Understanding Attention Mechanisms in Modern AI">
+                    <input type="text" class="article-subtitle-input"
+                           placeholder="Subtitle (optional)..."
+                           value="How self-attention replaced recurrence and changed NLP forever">
+                </div>
+
+                <!-- Section blocks -->
+                <div class="sections-container" id="sections-container">
+
+                    <!-- Section 1: Introduction — WRITTEN -->
+                    <div class="section-block expanded status-written" id="section-0">
+                        <div class="section-header" onclick="toggleSection(0)">
+                            <span class="section-drag-handle" title="Drag to reorder">&#8942;&#8942;</span>
+                            <span class="section-status-dot written"></span>
+                            <span class="section-title-display">Introduction</span>
+                            <span class="section-word-count" id="wc-0">82 words</span>
+                            <span class="section-ref-count">2 refs</span>
+                            <span class="section-status-label">Written</span>
+                            <span class="section-toggle">&#9662;</span>
+                        </div>
+                        <div class="section-body">
+                            <div class="section-outline">
+                                <div class="section-outline-label">Section Brief <span style="font-size:0.55rem; text-transform:none; letter-spacing:0; font-style:italic; color:var(--text-muted);">— guides AI when drafting or reviewing</span></div>
+                                <textarea class="section-outline-text">Introduce the problem of sequential processing and why attention changed everything. Hook the reader with a relatable analogy.</textarea>
+                            </div>
+
+                            <div class="section-refs">
+                                <div class="section-refs-label">Attached References</div>
+                                <div class="section-ref-chips">
+                                    <span class="section-ref-chip" onclick="previewRef('RNN Limitations in Long Sequences', 'Recurrent networks struggle with vanishing gradients...')">
+                                        <span class="ref-chip-type">Note</span>
+                                        RNN Limitations
+                                        <button class="ref-chip-remove" onclick="event.stopPropagation(); this.parentElement.remove();">&#10005;</button>
+                                    </span>
+                                    <span class="section-ref-chip" onclick="previewRef('Transformer Architecture Deep Dive', 'The Transformer is based entirely on attention mechanisms...')">
+                                        <span class="ref-chip-type">Note</span>
+                                        Transformer Deep Dive
+                                        <button class="ref-chip-remove" onclick="event.stopPropagation(); this.parentElement.remove();">&#10005;</button>
+                                    </span>
+                                    <button class="ref-picker-btn" onclick="toggleRefPicker(0)">+ Attach reference</button>
+                                </div>
+                                <div class="ref-picker" id="ref-picker-0">
+                                    <input type="text" class="ref-picker-search" placeholder="Search notes, summaries, sources..." oninput="filterRefPicker(this)">
+                                    <div class="ref-picker-results">
+                                        <div class="ref-picker-item" onclick="pickRef(0, 'Attention mechanism details', 'Note')">
+                                            <span class="ref-picker-item-type" style="color:var(--accent)">Note</span>
+                                            <span class="ref-picker-item-name">Attention mechanism details</span>
+                                            <span class="ref-picker-item-add">+ Add</span>
+                                        </div>
+                                        <div class="ref-picker-item" onclick="pickRef(0, 'BERT Pre-training Strategies', 'Note')">
+                                            <span class="ref-picker-item-type" style="color:var(--accent)">Note</span>
+                                            <span class="ref-picker-item-name">BERT Pre-training Strategies</span>
+                                            <span class="ref-picker-item-add">+ Add</span>
+                                        </div>
+                                        <div class="ref-picker-item" onclick="pickRef(0, 'HTMX vs React: Server Patterns', 'Note')">
+                                            <span class="ref-picker-item-type" style="color:var(--accent)">Note</span>
+                                            <span class="ref-picker-item-name">HTMX vs React: Server Patterns</span>
+                                            <span class="ref-picker-item-add">+ Add</span>
+                                        </div>
+                                        <div class="ref-picker-item" onclick="pickRef(0, 'Default Summary — Transformer', 'Summary')">
+                                            <span class="ref-picker-item-type" style="color:var(--warning)">Summary</span>
+                                            <span class="ref-picker-item-name">Default Summary — Transformer Paper</span>
+                                            <span class="ref-picker-item-add">+ Add</span>
+                                        </div>
+                                        <div class="ref-picker-item" onclick="pickRef(0, 'Key Concepts — Transformer', 'Summary')">
+                                            <span class="ref-picker-item-type" style="color:var(--warning)">Summary</span>
+                                            <span class="ref-picker-item-name">Key Concepts — Transformer Paper</span>
+                                            <span class="ref-picker-item-add">+ Add</span>
+                                        </div>
+                                        <div class="ref-picker-item" onclick="pickRef(0, 'transformer-paper.pdf', 'Source')">
+                                            <span class="ref-picker-item-type" style="color:var(--success)">Source</span>
+                                            <span class="ref-picker-item-name">transformer-paper.pdf</span>
+                                            <span class="ref-picker-item-add">+ Add</span>
+                                        </div>
+                                    </div>
+                                    <button class="ref-picker-close" onclick="toggleRefPicker(0)">Close</button>
+                                </div>
+                            </div>
+
+                            <div class="section-content-area">
+                                <div class="section-toolbar">
+                                    <button class="toolbar-btn"><b>B</b></button>
+                                    <button class="toolbar-btn"><i>I</i></button>
+                                    <button class="toolbar-btn">H2</button>
+                                    <button class="toolbar-btn">&#8226;</button>
+                                    <button class="toolbar-btn">&lt;/&gt;</button>
+                                    <button class="toolbar-btn">&#128279;</button>
+                                </div>
+                                <textarea class="section-editor">The Transformer architecture, introduced in the landmark paper "Attention Is All You Need," fundamentally reshaped how we think about sequence processing in machine learning.
+
+Before Transformers, recurrent neural networks (RNNs) were the dominant approach for handling sequential data like text. But RNNs had a critical limitation: they processed tokens one at a time, making it difficult to capture relationships between distant parts of a sequence.
+
+The breakthrough was deceptively simple: what if, instead of reading a sequence one word at a time, the model could look at everything at once?</textarea>
+                            </div>
+
+                            <div class="section-actions">
+                                <div class="ai-actions-wrapper">
+                                    <button class="ai-actions-btn" onclick="toggleAIActions(0)">&#9672; AI Actions &#9662;</button>
+                                    <div class="ai-actions-menu" id="ai-actions-0">
+                                        <div class="ai-actions-menu-label">Rewrite</div>
+                                        <div class="ai-action-item" onclick="aiActionOnSection(0, 'revise')">
+                                            <span class="ai-action-icon">&#9998;</span>
+                                            <div class="ai-action-info">
+                                                <div class="ai-action-name">Revise</div>
+                                                <div class="ai-action-desc">Polish for clarity and flow</div>
+                                            </div>
+                                        </div>
+                                        <div class="ai-action-item" onclick="aiActionOnSection(0, 'shorten')">
+                                            <span class="ai-action-icon">&#8597;</span>
+                                            <div class="ai-action-info">
+                                                <div class="ai-action-name">Shorten</div>
+                                                <div class="ai-action-desc">Make concise, keep key points</div>
+                                            </div>
+                                        </div>
+                                        <div class="ai-action-item" onclick="aiActionOnSection(0, 'expand')">
+                                            <span class="ai-action-icon">&#8593;&#8595;</span>
+                                            <div class="ai-action-info">
+                                                <div class="ai-action-name">Expand</div>
+                                                <div class="ai-action-desc">Add depth using attached refs</div>
+                                            </div>
+                                        </div>
+                                        <div class="ai-action-item" onclick="aiActionOnSection(0, 'rephrase')">
+                                            <span class="ai-action-icon">&#8635;</span>
+                                            <div class="ai-action-info">
+                                                <div class="ai-action-name">Rephrase</div>
+                                                <div class="ai-action-desc">Offer alternative phrasings</div>
+                                            </div>
+                                        </div>
+                                        <div class="ai-action-item" onclick="aiActionOnSection(0, 'tone')">
+                                            <span class="ai-action-icon">&#9835;</span>
+                                            <div class="ai-action-info">
+                                                <div class="ai-action-name">Adjust Tone</div>
+                                                <div class="ai-action-desc">Change voice (formal, casual, tutorial...)</div>
+                                            </div>
+                                        </div>
+                                        <div class="ai-actions-menu-sep"></div>
+                                        <div class="ai-actions-menu-label">Review</div>
+                                        <div class="ai-action-item" onclick="aiActionOnSection(0, 'review')">
+                                            <span class="ai-action-icon">&#10003;</span>
+                                            <div class="ai-action-info">
+                                                <div class="ai-action-name">Review</div>
+                                                <div class="ai-action-desc">Check logic, flow, and clarity</div>
+                                            </div>
+                                        </div>
+                                        <div class="ai-action-item" onclick="aiActionOnSection(0, 'consistency')">
+                                            <span class="ai-action-icon">&#8652;</span>
+                                            <div class="ai-action-info">
+                                                <div class="ai-action-name">Check Consistency</div>
+                                                <div class="ai-action-desc">Compare against other sections</div>
+                                            </div>
+                                        </div>
+                                        <div class="ai-action-item" onclick="aiActionOnSection(0, 'factcheck')">
+                                            <span class="ai-action-icon">&#9673;</span>
+                                            <div class="ai-action-info">
+                                                <div class="ai-action-name">Fact Check</div>
+                                                <div class="ai-action-desc">Verify claims against attached refs</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="section-btn danger" onclick="deleteSection(0)">Delete section</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Self-Attention — AI DRAFTED -->
+                    <div class="section-block expanded status-ai-drafted" id="section-1">
+                        <div class="section-header" onclick="toggleSection(1)">
+                            <span class="section-drag-handle" title="Drag to reorder">&#8942;&#8942;</span>
+                            <span class="section-status-dot ai-drafted"></span>
+                            <span class="section-title-display">Self-Attention Mechanism</span>
+                            <span class="section-word-count" id="wc-1">148 words</span>
+                            <span class="section-ref-count">1 ref</span>
+                            <span class="section-status-label">AI Draft</span>
+                            <span class="section-toggle">&#9662;</span>
+                        </div>
+                        <div class="section-body">
+                            <div class="section-outline">
+                                <div class="section-outline-label">Section Brief <span style="font-size:0.55rem; text-transform:none; letter-spacing:0; font-style:italic; color:var(--text-muted);">— guides AI when drafting or reviewing</span></div>
+                                <textarea class="section-outline-text">How self-attention works. Compare with RNN's sequential approach. Emphasize parallelization and long-range dependency advantages.</textarea>
+                            </div>
+
+                            <div class="section-refs">
+                                <div class="section-refs-label">Attached References</div>
+                                <div class="section-ref-chips">
+                                    <span class="section-ref-chip" onclick="previewRef('Attention mechanism details', 'Multi-head attention runs several attention operations in parallel...')">
+                                        <span class="ref-chip-type">Note</span>
+                                        Attention mechanism details
+                                        <button class="ref-chip-remove" onclick="event.stopPropagation(); this.parentElement.remove();">&#10005;</button>
+                                    </span>
+                                    <button class="ref-picker-btn" onclick="toggleRefPicker(1)">+ Attach reference</button>
+                                </div>
+                                <div class="ref-picker" id="ref-picker-1">
+                                    <input type="text" class="ref-picker-search" placeholder="Search notes, summaries, sources..." oninput="filterRefPicker(this)">
+                                    <div class="ref-picker-results">
+                                        <div class="ref-picker-item" onclick="pickRef(1, 'RNN Limitations in Long Sequences', 'Note')">
+                                            <span class="ref-picker-item-type" style="color:var(--accent)">Note</span>
+                                            <span class="ref-picker-item-name">RNN Limitations in Long Sequences</span>
+                                            <span class="ref-picker-item-add">+ Add</span>
+                                        </div>
+                                        <div class="ref-picker-item" onclick="pickRef(1, 'BERT Pre-training Strategies', 'Note')">
+                                            <span class="ref-picker-item-type" style="color:var(--accent)">Note</span>
+                                            <span class="ref-picker-item-name">BERT Pre-training Strategies</span>
+                                            <span class="ref-picker-item-add">+ Add</span>
+                                        </div>
+                                        <div class="ref-picker-item" onclick="pickRef(1, 'Default Summary — Transformer', 'Summary')">
+                                            <span class="ref-picker-item-type" style="color:var(--warning)">Summary</span>
+                                            <span class="ref-picker-item-name">Default Summary — Transformer Paper</span>
+                                            <span class="ref-picker-item-add">+ Add</span>
+                                        </div>
+                                        <div class="ref-picker-item" onclick="pickRef(1, 'transformer-paper.pdf', 'Source')">
+                                            <span class="ref-picker-item-type" style="color:var(--success)">Source</span>
+                                            <span class="ref-picker-item-name">transformer-paper.pdf</span>
+                                            <span class="ref-picker-item-add">+ Add</span>
+                                        </div>
+                                    </div>
+                                    <button class="ref-picker-close" onclick="toggleRefPicker(1)">Close</button>
+                                </div>
+                            </div>
+
+                            <div class="section-content-area">
+                                <div class="section-ai-draft">
+                                    <span class="section-ai-draft-label">AI Draft</span>
+                                    <p>The key innovation was the self-attention mechanism. Rather than processing a sequence step by step, self-attention allows the model to look at all positions simultaneously and compute how much each position should "attend to" every other position.</p>
+                                    <br>
+                                    <p>Think of it this way: when you read a sentence, you don't forget the beginning by the time you reach the end. You hold the entire sentence in mind and understand how each word relates to every other word. Self-attention gives neural networks this same ability.</p>
+                                    <br>
+                                    <p>This approach has several concrete advantages over RNNs:</p>
+                                    <p>- <strong>Parallelization</strong>: all positions can be processed simultaneously on a GPU</p>
+                                    <p>- <strong>Long-range dependencies</strong>: any two positions are directly connected, regardless of distance</p>
+                                    <p>- <strong>Interpretability</strong>: attention weights reveal which parts of the input the model focuses on</p>
+
+                                    <div class="section-ai-actions">
+                                        <button class="ai-apply-btn reject" onclick="discardAIDraft(1)">Discard</button>
+                                        <button class="ai-apply-btn accept" onclick="acceptAIDraft(1)">Accept & Edit</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="section-actions">
+                                <div class="ai-actions-wrapper">
+                                    <button class="ai-actions-btn" onclick="toggleAIActions(1)">&#9672; AI Actions &#9662;</button>
+                                    <div class="ai-actions-menu" id="ai-actions-1">
+                                        <div class="ai-actions-menu-label">Rewrite</div>
+                                        <div class="ai-action-item" onclick="aiActionOnSection(1, 'redraft')">
+                                            <span class="ai-action-icon">&#8634;</span>
+                                            <div class="ai-action-info">
+                                                <div class="ai-action-name">Redraft</div>
+                                                <div class="ai-action-desc">Generate a new draft from scratch</div>
+                                            </div>
+                                        </div>
+                                        <div class="ai-action-item" onclick="aiActionOnSection(1, 'revise')">
+                                            <span class="ai-action-icon">&#9998;</span>
+                                            <div class="ai-action-info">
+                                                <div class="ai-action-name">Revise</div>
+                                                <div class="ai-action-desc">Polish this draft for clarity and flow</div>
+                                            </div>
+                                        </div>
+                                        <div class="ai-action-item" onclick="aiActionOnSection(1, 'shorten')">
+                                            <span class="ai-action-icon">&#8597;</span>
+                                            <div class="ai-action-info">
+                                                <div class="ai-action-name">Shorten</div>
+                                                <div class="ai-action-desc">Make concise, keep key points</div>
+                                            </div>
+                                        </div>
+                                        <div class="ai-action-item" onclick="aiActionOnSection(1, 'expand')">
+                                            <span class="ai-action-icon">&#8593;&#8595;</span>
+                                            <div class="ai-action-info">
+                                                <div class="ai-action-name">Expand</div>
+                                                <div class="ai-action-desc">Add depth using attached refs</div>
+                                            </div>
+                                        </div>
+                                        <div class="ai-action-item" onclick="aiActionOnSection(1, 'tone')">
+                                            <span class="ai-action-icon">&#9835;</span>
+                                            <div class="ai-action-info">
+                                                <div class="ai-action-name">Adjust Tone</div>
+                                                <div class="ai-action-desc">Change voice (formal, casual, tutorial...)</div>
+                                            </div>
+                                        </div>
+                                        <div class="ai-actions-menu-sep"></div>
+                                        <div class="ai-actions-menu-label">Review</div>
+                                        <div class="ai-action-item" onclick="aiActionOnSection(1, 'review')">
+                                            <span class="ai-action-icon">&#10003;</span>
+                                            <div class="ai-action-info">
+                                                <div class="ai-action-name">Review</div>
+                                                <div class="ai-action-desc">Check logic, flow, and clarity</div>
+                                            </div>
+                                        </div>
+                                        <div class="ai-action-item" onclick="aiActionOnSection(1, 'factcheck')">
+                                            <span class="ai-action-icon">&#9673;</span>
+                                            <div class="ai-action-info">
+                                                <div class="ai-action-name">Fact Check</div>
+                                                <div class="ai-action-desc">Verify claims against attached refs</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="section-btn danger" onclick="deleteSection(1)">Delete section</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Multi-Head — OUTLINE ONLY -->
+                    <div class="section-block" id="section-2">
+                        <div class="section-header" onclick="toggleSection(2)">
+                            <span class="section-drag-handle" title="Drag to reorder">&#8942;&#8942;</span>
+                            <span class="section-status-dot outline"></span>
+                            <span class="section-title-display">Multi-Head Attention</span>
+                            <span class="section-word-count" id="wc-2">0 words</span>
+                            <span class="section-ref-count">0 refs</span>
+                            <span class="section-status-label">Outline</span>
+                            <span class="section-toggle">&#9662;</span>
+                        </div>
+                        <div class="section-body">
+                            <div class="section-outline">
+                                <div class="section-outline-label">Section Brief <span style="font-size:0.55rem; text-transform:none; letter-spacing:0; font-style:italic; color:var(--text-muted);">— guides AI when drafting or reviewing</span></div>
+                                <textarea class="section-outline-text">Explain why multiple heads matter. What each head learns. Intuition: different heads capture different relationship types (syntactic, semantic, positional).</textarea>
+                            </div>
+
+                            <div class="section-refs">
+                                <div class="section-refs-label">Attached References</div>
+                                <div class="section-ref-chips">
+                                    <span class="section-ref-empty">No references attached yet.</span>
+                                    <button class="ref-picker-btn" onclick="toggleRefPicker(2)">+ Attach reference</button>
+                                </div>
+                                <div class="ref-picker" id="ref-picker-2">
+                                    <input type="text" class="ref-picker-search" placeholder="Search notes, summaries, sources..." oninput="filterRefPicker(this)">
+                                    <div class="ref-picker-results">
+                                        <div class="ref-picker-item" onclick="pickRef(2, 'Attention mechanism details', 'Note')">
+                                            <span class="ref-picker-item-type" style="color:var(--accent)">Note</span>
+                                            <span class="ref-picker-item-name">Attention mechanism details</span>
+                                            <span class="ref-picker-item-add">+ Add</span>
+                                        </div>
+                                        <div class="ref-picker-item" onclick="pickRef(2, 'RNN Limitations in Long Sequences', 'Note')">
+                                            <span class="ref-picker-item-type" style="color:var(--accent)">Note</span>
+                                            <span class="ref-picker-item-name">RNN Limitations in Long Sequences</span>
+                                            <span class="ref-picker-item-add">+ Add</span>
+                                        </div>
+                                        <div class="ref-picker-item" onclick="pickRef(2, 'BERT Pre-training Strategies', 'Note')">
+                                            <span class="ref-picker-item-type" style="color:var(--accent)">Note</span>
+                                            <span class="ref-picker-item-name">BERT Pre-training Strategies</span>
+                                            <span class="ref-picker-item-add">+ Add</span>
+                                        </div>
+                                        <div class="ref-picker-item" onclick="pickRef(2, 'Key Concepts — Transformer', 'Summary')">
+                                            <span class="ref-picker-item-type" style="color:var(--warning)">Summary</span>
+                                            <span class="ref-picker-item-name">Key Concepts — Transformer Paper</span>
+                                            <span class="ref-picker-item-add">+ Add</span>
+                                        </div>
+                                        <div class="ref-picker-item" onclick="pickRef(2, 'transformer-paper.pdf', 'Source')">
+                                            <span class="ref-picker-item-type" style="color:var(--success)">Source</span>
+                                            <span class="ref-picker-item-name">transformer-paper.pdf</span>
+                                            <span class="ref-picker-item-add">+ Add</span>
+                                        </div>
+                                    </div>
+                                    <button class="ref-picker-close" onclick="toggleRefPicker(2)">Close</button>
+                                </div>
+                            </div>
+
+                            <div class="section-actions">
+                                <button class="section-btn primary" onclick="startWriting(2)">Write</button>
+                                <div class="ai-actions-wrapper">
+                                    <button class="ai-actions-btn" onclick="toggleAIActions(2)">&#9672; AI Actions &#9662;</button>
+                                    <div class="ai-actions-menu" id="ai-actions-2">
+                                        <div class="ai-actions-menu-label">Before writing</div>
+                                        <div class="ai-action-item" onclick="aiActionOnSection(2, 'suggest-outline')">
+                                            <span class="ai-action-icon">&#9776;</span>
+                                            <div class="ai-action-info">
+                                                <div class="ai-action-name">Suggest Outline</div>
+                                                <div class="ai-action-desc">Propose what points to cover based on refs</div>
+                                            </div>
+                                        </div>
+                                        <div class="ai-action-item" onclick="aiActionOnSection(2, 'suggest-angles')">
+                                            <span class="ai-action-icon">&#9670;</span>
+                                            <div class="ai-action-info">
+                                                <div class="ai-action-name">Suggest Angles</div>
+                                                <div class="ai-action-desc">Propose 2-3 framing approaches</div>
+                                            </div>
+                                        </div>
+                                        <div class="ai-actions-menu-sep"></div>
+                                        <div class="ai-actions-menu-label">Generate</div>
+                                        <div class="ai-action-item" onclick="aiActionOnSection(2, 'draft')">
+                                            <span class="ai-action-icon">&#9998;</span>
+                                            <div class="ai-action-info">
+                                                <div class="ai-action-name">Draft</div>
+                                                <div class="ai-action-desc">Write full section from outline + refs</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="section-btn danger" onclick="deleteSection(2)">Delete section</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 4: Conclusion — OUTLINE ONLY with refs -->
+                    <div class="section-block" id="section-3">
+                        <div class="section-header" onclick="toggleSection(3)">
+                            <span class="section-drag-handle" title="Drag to reorder">&#8942;&#8942;</span>
+                            <span class="section-status-dot outline"></span>
+                            <span class="section-title-display">Conclusion</span>
+                            <span class="section-word-count" id="wc-3">0 words</span>
+                            <span class="section-ref-count">1 ref</span>
+                            <span class="section-status-label">Outline</span>
+                            <span class="section-toggle">&#9662;</span>
+                        </div>
+                        <div class="section-body">
+                            <div class="section-outline">
+                                <div class="section-outline-label">Section Brief <span style="font-size:0.55rem; text-transform:none; letter-spacing:0; font-style:italic; color:var(--text-muted);">— guides AI when drafting or reviewing</span></div>
+                                <textarea class="section-outline-text">Tie back to RNN limitations — attention didn't just improve on RNNs, it made their core limitation irrelevant. Look forward to efficiency challenges.</textarea>
+                            </div>
+
+                            <div class="section-refs">
+                                <div class="section-refs-label">Attached References</div>
+                                <div class="section-ref-chips">
+                                    <span class="section-ref-chip">
+                                        <span class="ref-chip-type">Note</span>
+                                        RNN Limitations
+                                        <button class="ref-chip-remove" onclick="event.stopPropagation(); this.parentElement.remove();">&#10005;</button>
+                                    </span>
+                                    <button class="ref-picker-btn" onclick="toggleRefPicker(3)">+ Attach reference</button>
+                                </div>
+                                <div class="ref-picker" id="ref-picker-3">
+                                    <input type="text" class="ref-picker-search" placeholder="Search notes, summaries, sources..." oninput="filterRefPicker(this)">
+                                    <div class="ref-picker-results">
+                                        <div class="ref-picker-item" onclick="pickRef(3, 'Attention mechanism details', 'Note')">
+                                            <span class="ref-picker-item-type" style="color:var(--accent)">Note</span>
+                                            <span class="ref-picker-item-name">Attention mechanism details</span>
+                                            <span class="ref-picker-item-add">+ Add</span>
+                                        </div>
+                                        <div class="ref-picker-item" onclick="pickRef(3, 'BERT Pre-training Strategies', 'Note')">
+                                            <span class="ref-picker-item-type" style="color:var(--accent)">Note</span>
+                                            <span class="ref-picker-item-name">BERT Pre-training Strategies</span>
+                                            <span class="ref-picker-item-add">+ Add</span>
+                                        </div>
+                                        <div class="ref-picker-item" onclick="pickRef(3, 'Default Summary — Transformer', 'Summary')">
+                                            <span class="ref-picker-item-type" style="color:var(--warning)">Summary</span>
+                                            <span class="ref-picker-item-name">Default Summary — Transformer Paper</span>
+                                            <span class="ref-picker-item-add">+ Add</span>
+                                        </div>
+                                        <div class="ref-picker-item" onclick="pickRef(3, 'transformer-paper.pdf', 'Source')">
+                                            <span class="ref-picker-item-type" style="color:var(--success)">Source</span>
+                                            <span class="ref-picker-item-name">transformer-paper.pdf</span>
+                                            <span class="ref-picker-item-add">+ Add</span>
+                                        </div>
+                                    </div>
+                                    <button class="ref-picker-close" onclick="toggleRefPicker(3)">Close</button>
+                                </div>
+                            </div>
+
+                            <div class="section-actions">
+                                <button class="section-btn primary" onclick="startWriting(3)">Write</button>
+                                <div class="ai-actions-wrapper">
+                                    <button class="ai-actions-btn" onclick="toggleAIActions(3)">&#9672; AI Actions &#9662;</button>
+                                    <div class="ai-actions-menu" id="ai-actions-3">
+                                        <div class="ai-actions-menu-label">Before writing</div>
+                                        <div class="ai-action-item" onclick="aiActionOnSection(3, 'suggest-outline')">
+                                            <span class="ai-action-icon">&#9776;</span>
+                                            <div class="ai-action-info">
+                                                <div class="ai-action-name">Suggest Outline</div>
+                                                <div class="ai-action-desc">Propose what points to cover based on refs</div>
+                                            </div>
+                                        </div>
+                                        <div class="ai-action-item" onclick="aiActionOnSection(3, 'suggest-angles')">
+                                            <span class="ai-action-icon">&#9670;</span>
+                                            <div class="ai-action-info">
+                                                <div class="ai-action-name">Suggest Angles</div>
+                                                <div class="ai-action-desc">Propose 2-3 framing approaches</div>
+                                            </div>
+                                        </div>
+                                        <div class="ai-actions-menu-sep"></div>
+                                        <div class="ai-actions-menu-label">Generate</div>
+                                        <div class="ai-action-item" onclick="aiActionOnSection(3, 'draft')">
+                                            <span class="ai-action-icon">&#9998;</span>
+                                            <div class="ai-action-info">
+                                                <div class="ai-action-name">Draft</div>
+                                                <div class="ai-action-desc">Write full section from outline + refs</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="section-btn danger" onclick="deleteSection(3)">Delete section</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add section button -->
+                    <div class="add-section-btn" onclick="addSection()">
+                        + Add Section
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="editor-footer">
+                <div class="footer-stats">
+                    <span>4 sections</span>
+                    <span>1 written, 1 AI draft, 2 outline</span>
+                    <span>~230 words total</span>
+                </div>
+                <div class="editor-footer-actions">
+                    <div class="ai-actions-wrapper">
+                        <button class="ai-actions-btn" onclick="toggleArticleAIActions(event)" style="font-size:0.75rem;">&#9672; Article AI &#9662;</button>
+                        <div class="ai-actions-menu" id="ai-actions-article" style="position:absolute; top:auto; bottom:calc(100% + 6px); left:0;">
+                            <div class="ai-actions-menu-label">Coherence & Cohesion</div>
+                            <div class="ai-action-item" onclick="articleAIAction('review-full')">
+                                <span class="ai-action-icon">&#10003;</span>
+                                <div class="ai-action-info">
+                                    <div class="ai-action-name">Review Full Article</div>
+                                    <div class="ai-action-desc">Check flow, coherence, and overall quality</div>
+                                </div>
+                            </div>
+                            <div class="ai-action-item" onclick="articleAIAction('cohesion')">
+                                <span class="ai-action-icon">&#8652;</span>
+                                <div class="ai-action-info">
+                                    <div class="ai-action-name">Check Cohesion</div>
+                                    <div class="ai-action-desc">Do sections connect logically? Smooth transitions?</div>
+                                </div>
+                            </div>
+                            <div class="ai-action-item" onclick="articleAIAction('consistency')">
+                                <span class="ai-action-icon">&#8796;</span>
+                                <div class="ai-action-info">
+                                    <div class="ai-action-name">Check Consistency</div>
+                                    <div class="ai-action-desc">Flag repetition, contradictions across sections</div>
+                                </div>
+                            </div>
+                            <div class="ai-action-item" onclick="articleAIAction('factcheck-all')">
+                                <span class="ai-action-icon">&#9673;</span>
+                                <div class="ai-action-info">
+                                    <div class="ai-action-name">Fact Check All</div>
+                                    <div class="ai-action-desc">Verify all claims against all references</div>
+                                </div>
+                            </div>
+                            <div class="ai-actions-menu-sep"></div>
+                            <div class="ai-actions-menu-label">Rewrite</div>
+                            <div class="ai-action-item" onclick="articleAIAction('tone-all')">
+                                <span class="ai-action-icon">&#9835;</span>
+                                <div class="ai-action-info">
+                                    <div class="ai-action-name">Unify Tone</div>
+                                    <div class="ai-action-desc">Make voice consistent across all sections</div>
+                                </div>
+                            </div>
+                            <div class="ai-action-item" onclick="articleAIAction('transitions')">
+                                <span class="ai-action-icon">&#8594;</span>
+                                <div class="ai-action-info">
+                                    <div class="ai-action-name">Improve Transitions</div>
+                                    <div class="ai-action-desc">Suggest better connections between sections</div>
+                                </div>
+                            </div>
+                            <div class="ai-actions-menu-sep"></div>
+                            <div class="ai-actions-menu-label">Generate</div>
+                            <div class="ai-action-item" onclick="articleAIAction('gen-intro')">
+                                <span class="ai-action-icon">&#9656;</span>
+                                <div class="ai-action-info">
+                                    <div class="ai-action-name">Generate Introduction</div>
+                                    <div class="ai-action-desc">From all section briefs and outlines</div>
+                                </div>
+                            </div>
+                            <div class="ai-action-item" onclick="articleAIAction('gen-conclusion')">
+                                <span class="ai-action-icon">&#9632;</span>
+                                <div class="ai-action-info">
+                                    <div class="ai-action-name">Generate Conclusion</div>
+                                    <div class="ai-action-desc">From all section content and refs</div>
+                                </div>
+                            </div>
+                            <div class="ai-action-item" onclick="articleAIAction('gen-title')">
+                                <span class="ai-action-icon">&#9733;</span>
+                                <div class="ai-action-info">
+                                    <div class="ai-action-name">Suggest Title & Subtitle</div>
+                                    <div class="ai-action-desc">Based on article content</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary">Save Draft</button>
+                    <button class="btn btn-success">Preview & Publish &#8594;</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Muse -->
+        <div class="ai-panel" id="ai-panel">
+            <div class="ai-header">
+                <h3>Muse</h3>
+                <button class="ai-close" onclick="toggleAI()">&#10005;</button>
+            </div>
+
+            <div class="ai-context-bar" id="ai-context-bar">
+                Context: <strong>Full article</strong> (4 sections, 3 references)
+            </div>
+
+            <div class="ai-quick-actions">
+                <button class="ai-chip" onclick="sendAIMessage('Review the overall structure and flow')">Review structure</button>
+                <button class="ai-chip" onclick="sendAIMessage('Check for consistency across sections')">Check consistency</button>
+                <button class="ai-chip" onclick="sendAIMessage('Suggest a better title')">Better title</button>
+                <button class="ai-chip" onclick="sendAIMessage('Make the tone more conversational')">Adjust tone</button>
+                <button class="ai-chip" onclick="sendAIMessage('Fact-check claims against references')">Fact check</button>
+            </div>
+
+            <div class="ai-messages" id="ai-messages">
+                <div class="ai-msg assistant">
+                    I'm Muse, your writing companion. I can see your article outline, section content, and all attached references.
+                    <br><br>
+                    Ask me to review, revise, draft, or critique. Use the quick actions above or type below.
+                    <br><br>
+                    <em style="font-size:0.75rem; color:var(--text-muted);">Tip: When you click "Ask AI to draft" or "Ask AI to revise" on a section, I'll work with that section's outline and references specifically.</em>
+                </div>
+
+                <div class="ai-msg user">
+                    Draft the "Multi-Head Attention" section using the outline
+                </div>
+
+                <div class="ai-msg assistant">
+                    I see the outline says: "Explain why multiple heads matter. What each head learns. Intuition: different heads capture different relationship types."
+                    <br><br>
+                    I notice this section has no references attached. I'll use the general article context and the "Attention mechanism details" note from the Self-Attention section.
+
+                    <div class="ai-suggestion">
+                        <strong>Draft for "Multi-Head Attention":</strong>
+                        <br><br>
+                        The Transformer doesn't rely on a single attention function — it uses multiple "heads" running in parallel, each learning to focus on different types of relationships.
+                        <br><br>
+                        Why does this matter? A single attention head might learn to track syntactic relationships (which word is the subject of a verb), but miss semantic ones (which concepts are related). By running 8 or 16 heads simultaneously, the model captures multiple relationship types at once.
+                        <br><br>
+                        Research has shown that different heads naturally specialize: some track positional patterns, others capture coreference (linking "it" back to the noun it refers to), and others focus on semantic similarity.
+                    </div>
+
+                    <div class="ai-apply-row">
+                        <button class="ai-apply-btn reject">Dismiss</button>
+                        <button class="ai-apply-btn accept" onclick="alert('Would insert this into the Multi-Head Attention section as an AI Draft')">Apply to section</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ai-input-area">
+                <div class="ai-input-row">
+                    <input type="text" class="ai-input" id="ai-input"
+                           placeholder="Ask Muse about your article..."
+                           onkeydown="if(event.key==='Enter') sendAIMessage()">
+                    <button class="ai-send" onclick="sendAIMessage()">Send</button>
+                </div>
+                <div class="ai-input-hint">Muse sees your outline, content, and attached references</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div class="modal-overlay" id="modal-overlay" onclick="closeModal()">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="modal-title">Reference</h3>
+                <button class="ai-close" onclick="closeModal()">&#10005;</button>
+            </div>
+            <div class="modal-body" id="modal-body">Content</div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        /* Theme */
+        function toggleTheme() {
+            const html = document.documentElement;
+            const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+            html.setAttribute("data-theme", next);
+            localStorage.setItem("theme", next);
+            updateToggleButton(next);
+        }
+        function updateToggleButton(theme) {
+            document.getElementById("theme-icon").textContent = theme === "dark" ? "☾" : "☀";
+            document.getElementById("theme-label").textContent = theme === "dark" ? "Light mode" : "Dark mode";
+        }
+        (function () {
+            const saved = localStorage.getItem("theme") || "dark";
+            document.documentElement.setAttribute("data-theme", saved);
+            updateToggleButton(saved);
+        })();
+
+        /* AI Panel Toggle */
+        function toggleAI() {
+            document.getElementById("workspace").classList.toggle("ai-open");
+            document.getElementById("ai-toggle-btn").classList.toggle("active");
+        }
+
+        /* Refs Tab Switching */
+        function switchRefsTab(tab) {
+            document.querySelectorAll(".refs-tab").forEach(t => t.classList.remove("active"));
+            document.querySelectorAll(".refs-panel-content").forEach(p => p.classList.remove("active"));
+            event.target.classList.add("active");
+            document.getElementById("refs-" + tab).classList.add("active");
+        }
+
+        /*
+         * Section Toggle (expand/collapse)
+         *
+         * Each section block can be expanded to show outline, refs, and content,
+         * or collapsed to show just the header bar. This lets you focus on one
+         * section at a time while seeing the full outline.
+         */
+        function toggleSection(index) {
+            const section = document.getElementById("section-" + index);
+            section.classList.toggle("expanded");
+        }
+
+        /*
+         * Start Writing
+         *
+         * When a section is in "outline only" state, clicking "Write" adds
+         * a text editor to that section and changes its status to "writing".
+         */
+        function startWriting(index) {
+            const section = document.getElementById("section-" + index);
+            section.classList.add("status-writing", "expanded");
+
+            const dot = section.querySelector(".section-status-dot");
+            dot.className = "section-status-dot writing";
+
+            const label = section.querySelector(".section-status-label");
+            label.textContent = "Writing";
+
+            // Add editor if not present
+            const actions = section.querySelector(".section-actions");
+            if (!section.querySelector(".section-content-area")) {
+                const contentArea = document.createElement("div");
+                contentArea.className = "section-content-area";
+                contentArea.innerHTML = `
+                    <div class="section-toolbar">
+                        <button class="toolbar-btn"><b>B</b></button>
+                        <button class="toolbar-btn"><i>I</i></button>
+                        <button class="toolbar-btn">H2</button>
+                        <button class="toolbar-btn">•</button>
+                        <button class="toolbar-btn">&lt;/&gt;</button>
+                        <button class="toolbar-btn">🔗</button>
+                    </div>
+                    <textarea class="section-editor" placeholder="Start writing this section..."></textarea>
+                `;
+                actions.before(contentArea);
+            }
+
+            // Update actions with full AI dropdown for writing state
+            actions.innerHTML = `
+                <div class="ai-actions-wrapper">
+                    <button class="ai-actions-btn" onclick="toggleAIActions(${index})">&#9672; AI Actions &#9662;</button>
+                    <div class="ai-actions-menu" id="ai-actions-${index}">
+                        <div class="ai-actions-menu-label">Rewrite</div>
+                        <div class="ai-action-item" onclick="aiActionOnSection(${index}, 'revise')">
+                            <span class="ai-action-icon">&#9998;</span>
+                            <div class="ai-action-info">
+                                <div class="ai-action-name">Revise</div>
+                                <div class="ai-action-desc">Polish for clarity and flow</div>
+                            </div>
+                        </div>
+                        <div class="ai-action-item" onclick="aiActionOnSection(${index}, 'continue')">
+                            <span class="ai-action-icon">&#8618;</span>
+                            <div class="ai-action-info">
+                                <div class="ai-action-name">Continue</div>
+                                <div class="ai-action-desc">Pick up from where you stopped</div>
+                            </div>
+                        </div>
+                        <div class="ai-action-item" onclick="aiActionOnSection(${index}, 'shorten')">
+                            <span class="ai-action-icon">&#8597;</span>
+                            <div class="ai-action-info">
+                                <div class="ai-action-name">Shorten</div>
+                                <div class="ai-action-desc">Make concise, keep key points</div>
+                            </div>
+                        </div>
+                        <div class="ai-action-item" onclick="aiActionOnSection(${index}, 'expand')">
+                            <span class="ai-action-icon">&#8593;&#8595;</span>
+                            <div class="ai-action-info">
+                                <div class="ai-action-name">Expand</div>
+                                <div class="ai-action-desc">Add depth using attached refs</div>
+                            </div>
+                        </div>
+                        <div class="ai-action-item" onclick="aiActionOnSection(${index}, 'rephrase')">
+                            <span class="ai-action-icon">&#8635;</span>
+                            <div class="ai-action-info">
+                                <div class="ai-action-name">Rephrase</div>
+                                <div class="ai-action-desc">Offer alternative phrasings</div>
+                            </div>
+                        </div>
+                        <div class="ai-action-item" onclick="aiActionOnSection(${index}, 'tone')">
+                            <span class="ai-action-icon">&#9835;</span>
+                            <div class="ai-action-info">
+                                <div class="ai-action-name">Adjust Tone</div>
+                                <div class="ai-action-desc">Change voice (formal, casual, tutorial...)</div>
+                            </div>
+                        </div>
+                        <div class="ai-actions-menu-sep"></div>
+                        <div class="ai-actions-menu-label">Review</div>
+                        <div class="ai-action-item" onclick="aiActionOnSection(${index}, 'review')">
+                            <span class="ai-action-icon">&#10003;</span>
+                            <div class="ai-action-info">
+                                <div class="ai-action-name">Review</div>
+                                <div class="ai-action-desc">Check logic, flow, and clarity</div>
+                            </div>
+                        </div>
+                        <div class="ai-action-item" onclick="aiActionOnSection(${index}, 'factcheck')">
+                            <span class="ai-action-icon">&#9673;</span>
+                            <div class="ai-action-info">
+                                <div class="ai-action-name">Fact Check</div>
+                                <div class="ai-action-desc">Verify claims against attached refs</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button class="section-btn success" onclick="markWritten(${index})">Mark as done</button>
+                <button class="section-btn danger" onclick="deleteSection(${index})">Delete section</button>
+            `;
+        }
+
+        function markWritten(index) {
+            const section = document.getElementById("section-" + index);
+            section.className = "section-block expanded status-written";
+            section.querySelector(".section-status-dot").className = "section-status-dot written";
+            section.querySelector(".section-status-label").textContent = "Written";
+        }
+
+        /*
+         * Accept AI Draft
+         *
+         * Converts an AI draft into an editable textarea so the user
+         * can refine it. Changes status from "AI Draft" to "Writing".
+         */
+        function acceptAIDraft(index) {
+            const section = document.getElementById("section-" + index);
+            const draft = section.querySelector(".section-ai-draft");
+            const text = draft.innerText
+                .replace("AI Draft", "")
+                .replace("DiscardAccept & Edit", "")
+                .trim();
+
+            const contentArea = draft.parentElement;
+            contentArea.innerHTML = `
+                <div class="section-toolbar">
+                    <button class="toolbar-btn"><b>B</b></button>
+                    <button class="toolbar-btn"><i>I</i></button>
+                    <button class="toolbar-btn">H2</button>
+                    <button class="toolbar-btn">•</button>
+                    <button class="toolbar-btn">&lt;/&gt;</button>
+                    <button class="toolbar-btn">🔗</button>
+                </div>
+                <textarea class="section-editor">${text}</textarea>
+            `;
+
+            section.className = "section-block expanded status-writing";
+            section.querySelector(".section-status-dot").className = "section-status-dot writing";
+            section.querySelector(".section-status-label").textContent = "Writing";
+        }
+
+        function discardAIDraft(index) {
+            const section = document.getElementById("section-" + index);
+            const draft = section.querySelector(".section-ai-draft");
+            draft.parentElement.remove();
+
+            section.className = "section-block expanded";
+            section.querySelector(".section-status-dot").className = "section-status-dot outline";
+            section.querySelector(".section-status-label").textContent = "Outline";
+        }
+
+        function deleteSection(index) {
+            if (!confirm("Delete this section?")) return;
+            document.getElementById("section-" + index).remove();
+        }
+
+        /*
+         * Add New Section
+         *
+         * Appends a new empty section block with just an outline textarea.
+         */
+        let sectionCount = 4;
+        function addSection() {
+            const id = sectionCount++;
+            const container = document.getElementById("sections-container");
+            const addBtn = container.querySelector(".add-section-btn");
+
+            const section = document.createElement("div");
+            section.className = "section-block expanded";
+            section.id = "section-" + id;
+            section.innerHTML = `
+                <div class="section-header" onclick="toggleSection(${id})">
+                    <span class="section-drag-handle">⁞⁞</span>
+                    <span class="section-status-dot outline"></span>
+                    <input type="text" class="section-title-display"
+                           style="background:none; border:none; border-bottom:1px solid var(--border); color:var(--text-primary); font-size:0.9rem; font-weight:600; flex:1; padding:2px;"
+                           placeholder="Section title..."
+                           onclick="event.stopPropagation()">
+                    <span class="section-ref-count">0 refs</span>
+                    <span class="section-status-label">Outline</span>
+                    <span class="section-toggle">▾</span>
+                </div>
+                <div class="section-body">
+                    <div class="section-outline">
+                        <div class="section-outline-label">Section Brief <span style="font-size:0.55rem; text-transform:none; letter-spacing:0; font-style:italic; color:var(--text-muted);">— guides AI when drafting or reviewing</span></div>
+                        <textarea class="section-outline-text" placeholder="What should this section cover?"></textarea>
+                    </div>
+                    <div class="section-refs">
+                        <div class="section-refs-label">Attached References</div>
+                        <div class="section-ref-chips">
+                            <span class="section-ref-empty">No references attached.</span>
+                        </div>
+                    </div>
+                    <div class="section-actions">
+                        <button class="section-btn primary" onclick="startWriting(${id})">Write</button>
+                        <button class="section-btn warning" onclick="aiActionOnSection(${id}, 'draft')">Ask AI to draft</button>
+                        <button class="section-btn danger" onclick="deleteSection(${id})">Delete section</button>
+                    </div>
+                </div>
+            `;
+            addBtn.before(section);
+        }
+
+        /*
+         * AI Actions Dropdown Toggle
+         *
+         * Uses position:fixed so the menu escapes overflow:hidden containers.
+         * Calculates position from the button's bounding rect, then decides
+         * whether to open downward or upward based on available viewport space.
+         */
+        function positionMenu(btn, menu) {
+            const rect = btn.getBoundingClientRect();
+            menu.style.left = rect.left + "px";
+
+            // Temporarily show to measure height
+            menu.style.visibility = "hidden";
+            menu.classList.add("visible");
+            const menuHeight = menu.offsetHeight;
+            menu.classList.remove("visible");
+            menu.style.visibility = "";
+
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const spaceAbove = rect.top;
+
+            if (spaceBelow >= menuHeight + 8) {
+                // Open downward
+                menu.style.top = (rect.bottom + 6) + "px";
+            } else if (spaceAbove >= menuHeight + 8) {
+                // Open upward
+                menu.style.top = (rect.top - menuHeight - 6) + "px";
+            } else {
+                // Not enough space either way — open downward and let it scroll
+                menu.style.top = (rect.bottom + 6) + "px";
+                menu.style.maxHeight = (spaceBelow - 16) + "px";
+            }
+        }
+
+        function toggleAIActions(index) {
+            const menu = document.getElementById("ai-actions-" + index);
+            const btn = menu.closest(".ai-actions-wrapper").querySelector(".ai-actions-btn");
+            const wasVisible = menu.classList.contains("visible");
+
+            document.querySelectorAll(".ai-actions-menu.visible").forEach(m => m.classList.remove("visible"));
+
+            if (!wasVisible) {
+                positionMenu(btn, menu);
+                menu.classList.add("visible");
+            }
+        }
+
+        function toggleArticleAIActions(e) {
+            if (e) e.stopPropagation();
+            const menu = document.getElementById("ai-actions-article");
+            const wasVisible = menu.classList.contains("visible");
+
+            document.querySelectorAll(".ai-actions-menu.visible").forEach(m => m.classList.remove("visible"));
+
+            if (!wasVisible) {
+                menu.classList.add("visible");
+            }
+        }
+
+        // Close AI actions menus on outside click or scroll
+        document.addEventListener("click", function(e) {
+            if (!e.target.closest(".ai-actions-wrapper")) {
+                document.querySelectorAll(".ai-actions-menu.visible").forEach(m => m.classList.remove("visible"));
+            }
+        });
+
+        document.querySelector(".editor-body").addEventListener("scroll", function() {
+            document.querySelectorAll(".ai-actions-menu.visible").forEach(m => m.classList.remove("visible"));
+        });
+
+        /*
+         * AI Action on Section
+         *
+         * Opens the AI companion panel and sends a contextual message
+         * based on which action was selected. The AI receives different
+         * instructions depending on the action type.
+         */
+        function aiActionOnSection(index, action) {
+            // Close the dropdown
+            document.querySelectorAll(".ai-actions-menu.visible").forEach(m => m.classList.remove("visible"));
+
+            const section = document.getElementById("section-" + index);
+            const title = section.querySelector(".section-title-display").textContent ||
+                          section.querySelector(".section-title-display").value || "this section";
+
+            const messages = {
+                // Before writing
+                "suggest-outline": `For the "${title}" section, suggest what key points I should cover. Use the attached references and the overall article context.`,
+                "suggest-angles": `For the "${title}" section, suggest 2-3 different angles I could take. Give me a one-line preview of each approach.`,
+                "draft": `Draft the "${title}" section using its outline and attached references. Follow the outline structure.`,
+                // During writing
+                "revise": `Revise the "${title}" section — improve clarity, flow, and readability while keeping my voice.`,
+                "continue": `Continue writing the "${title}" section from where I left off. Match my style and follow the outline.`,
+                "shorten": `Shorten the "${title}" section — make it more concise while keeping the key points.`,
+                "expand": `Expand the "${title}" section — add more depth and detail using the attached references.`,
+                "rephrase": `Offer 2-3 alternative phrasings for the "${title}" section. Keep the same meaning but different wording.`,
+                "tone": `Adjust the tone of the "${title}" section. What tone would you like? (formal, conversational, tutorial-style, storytelling)`,
+                // After writing
+                "review": `Review the "${title}" section for logic, flow, and clarity. Does it achieve what the outline promised?`,
+                "consistency": `Check the "${title}" section for consistency against other sections. Flag any repetition or contradictions.`,
+                "factcheck": `Fact-check the "${title}" section against its attached references. Are all claims accurately representing the source material?`,
+                // AI draft specific
+                "redraft": `Redraft the "${title}" section from scratch with a different approach. Use the same outline and references.`
+            };
+
+            // Update context bar to show which section AI is focused on
+            document.getElementById("ai-context-bar").innerHTML =
+                `Context: <strong>§ ${title}</strong> (outline + references)`;
+
+            if (!document.getElementById("workspace").classList.contains("ai-open")) {
+                toggleAI();
+            }
+
+            sendAIMessage(messages[action] || `Help me with the "${title}" section`);
+        }
+
+        /*
+         * Attach Reference to Section
+         *
+         * Adds a reference chip to the specified section's refs area.
+         */
+        function attachToSection(menuItem, sectionIndex, refName, refType) {
+            const section = document.getElementById("section-" + sectionIndex);
+            const chips = section.querySelector(".section-ref-chips");
+
+            // Remove "no references" message
+            const empty = chips.querySelector(".section-ref-empty");
+            if (empty) empty.remove();
+
+            const chip = document.createElement("span");
+            chip.className = "section-ref-chip";
+            chip.innerHTML = `
+                <span class="ref-chip-type">${refType.charAt(0).toUpperCase() + refType.slice(1)}</span>
+                ${refName}
+                <button class="ref-chip-remove" onclick="event.stopPropagation(); this.parentElement.remove();">✕</button>
+            `;
+            chips.appendChild(chip);
+
+            // Update ref count
+            const count = chips.querySelectorAll(".section-ref-chip").length;
+            section.querySelector(".section-ref-count").textContent = count + " ref" + (count !== 1 ? "s" : "");
+
+            // Close menu
+            menuItem.closest(".attach-menu").classList.remove("visible");
+        }
+
+        /*
+         * Article-level AI Actions
+         */
+        function toggleArticleAIActions() {
+            const menu = document.getElementById("ai-actions-article");
+            const wasVisible = menu.classList.contains("visible");
+            document.querySelectorAll(".ai-actions-menu.visible").forEach(m => m.classList.remove("visible"));
+            if (!wasVisible) menu.classList.add("visible");
+        }
+
+        function articleAIAction(action) {
+            document.querySelectorAll(".ai-actions-menu.visible").forEach(m => m.classList.remove("visible"));
+
+            const messages = {
+                "review-full": "Review the full article for overall quality, coherence, and flow. Does it read well from start to finish?",
+                "cohesion": "Check cohesion across all sections. Do they connect logically? Are the transitions smooth? Does each section build on the previous one?",
+                "consistency": "Check for consistency across all sections. Flag any repetition, contradictions, or conflicting statements.",
+                "factcheck-all": "Fact-check the entire article. Verify all claims against the attached references in each section.",
+                "tone-all": "Review the tone across all sections. Is the voice consistent? Suggest changes to unify the tone.",
+                "transitions": "Suggest better transitions between sections. How can the end of each section lead more naturally into the next?",
+                "gen-intro": "Generate an introduction for this article based on all the section briefs and outlines. It should set up the reader for what's coming.",
+                "gen-conclusion": "Generate a conclusion based on all section content. It should tie everything together and leave the reader with a clear takeaway.",
+                "gen-title": "Suggest 3 alternative titles and subtitles for this article based on its content."
+            };
+
+            document.getElementById("ai-context-bar").innerHTML =
+                `Context: <strong>Full Article</strong> (all sections, all references)`;
+
+            if (!document.getElementById("workspace").classList.contains("ai-open")) {
+                toggleAI();
+            }
+
+            sendAIMessage(messages[action] || "Help me with the full article");
+        }
+
+        /*
+         * Live Word Count per Section
+         *
+         * Attaches input listeners to section editors.
+         * Counts words in the textarea and updates the badge in the header.
+         */
+        function initWordCounts() {
+            document.querySelectorAll(".section-editor").forEach(editor => {
+                const sectionBlock = editor.closest(".section-block");
+                if (!sectionBlock) return;
+                const id = sectionBlock.id.replace("section-", "");
+                const wcEl = document.getElementById("wc-" + id);
+                if (!wcEl) return;
+
+                function update() {
+                    const text = editor.value.trim();
+                    const count = text ? text.split(/\s+/).length : 0;
+                    wcEl.textContent = count + " word" + (count !== 1 ? "s" : "");
+                }
+
+                editor.addEventListener("input", update);
+            });
+        }
+
+        initWordCounts();
+
+        /* Attach Menu Toggle (left panel) */
+        function toggleAttachMenu(btn) {
+            document.querySelectorAll(".attach-menu.visible").forEach(m => m.classList.remove("visible"));
+            btn.nextElementSibling.classList.toggle("visible");
+        }
+
+        document.addEventListener("click", () => {
+            document.querySelectorAll(".attach-menu.visible").forEach(m => m.classList.remove("visible"));
+        });
+
+        /*
+         * Inline Reference Picker (inside sections)
+         *
+         * Each section has a "+ Attach reference" button that opens
+         * a search picker inline. You can search across notes, summaries,
+         * and sources, then click one to attach it as a chip.
+         */
+        function toggleRefPicker(sectionIndex) {
+            // Close all other pickers first
+            document.querySelectorAll(".ref-picker.visible").forEach(p => p.classList.remove("visible"));
+            const picker = document.getElementById("ref-picker-" + sectionIndex);
+            picker.classList.toggle("visible");
+            if (picker.classList.contains("visible")) {
+                picker.querySelector(".ref-picker-search").focus();
+            }
+        }
+
+        function pickRef(sectionIndex, refName, refType) {
+            const section = document.getElementById("section-" + sectionIndex);
+            const chips = section.querySelector(".section-ref-chips");
+
+            // Remove "no references" message if present
+            const empty = chips.querySelector(".section-ref-empty");
+            if (empty) empty.remove();
+
+            // Insert chip before the "+ Attach reference" button
+            const pickerBtn = chips.querySelector(".ref-picker-btn");
+            const chip = document.createElement("span");
+            chip.className = "section-ref-chip";
+
+            const typeColor = refType === "Note" ? "var(--accent)" :
+                              refType === "Summary" ? "var(--warning)" : "var(--success)";
+
+            chip.innerHTML = `
+                <span class="ref-chip-type">${refType}</span>
+                ${refName}
+                <button class="ref-chip-remove" onclick="event.stopPropagation(); this.parentElement.remove(); updateRefCount(${sectionIndex});">✕</button>
+            `;
+            chip.onclick = function() {
+                previewRef(refName, '(Full content would be shown here in the real app)');
+            };
+            chips.insertBefore(chip, pickerBtn);
+
+            // Update ref count badge
+            updateRefCount(sectionIndex);
+
+            // Close the picker after selecting
+            document.getElementById("ref-picker-" + sectionIndex).classList.remove("visible");
+        }
+
+        function updateRefCount(sectionIndex) {
+            const section = document.getElementById("section-" + sectionIndex);
+            const count = section.querySelectorAll(".section-ref-chip").length;
+            section.querySelector(".section-ref-count").textContent = count + " ref" + (count !== 1 ? "s" : "");
+        }
+
+        function filterRefPicker(input) {
+            const query = input.value.toLowerCase();
+            const items = input.closest(".ref-picker").querySelectorAll(".ref-picker-item");
+            items.forEach(item => {
+                const name = item.querySelector(".ref-picker-item-name").textContent.toLowerCase();
+                item.style.display = name.includes(query) ? "flex" : "none";
+            });
+        }
+
+        /* Modal */
+        function previewRef(title, content) {
+            document.getElementById("modal-title").textContent = title;
+            document.getElementById("modal-body").textContent = content;
+            document.getElementById("modal-overlay").classList.add("visible");
+        }
+
+        function closeModal() {
+            document.getElementById("modal-overlay").classList.remove("visible");
+        }
+
+        /* AI Chat */
+        function sendAIMessage(text) {
+            const input = document.getElementById("ai-input");
+            const message = text || input.value;
+            if (!message) return;
+
+            const container = document.getElementById("ai-messages");
+
+            const userMsg = document.createElement("div");
+            userMsg.className = "ai-msg user";
+            userMsg.textContent = message;
+            container.appendChild(userMsg);
+
+            setTimeout(() => {
+                const aiMsg = document.createElement("div");
+                aiMsg.className = "ai-msg assistant";
+                aiMsg.textContent = "I'll work on that using the section's outline and references. (In the real app, this calls the AI provider with full context.)";
+                container.appendChild(aiMsg);
+                container.scrollTop = container.scrollHeight;
+            }, 500);
+
+            input.value = "";
+            container.scrollTop = container.scrollHeight;
+
+            if (!document.getElementById("workspace").classList.contains("ai-open")) {
+                toggleAI();
+            }
+        }
+    </script>
+
+</body>
+</html>

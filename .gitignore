@@ -1,0 +1,21 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Database
+data/*.duckdb
+data/*.duckdb.wal
+
+# Uploads
+static/uploads/*
+!static/uploads/.gitkeep
+
+# Environment
+.env

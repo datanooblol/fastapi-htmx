@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecondBrain — Source Workspace</title>
+    <style>
+        /* ========================================
+           CSS VARIABLES (Theme System)
+           ======================================== */
+        :root {
+            --sidebar-width: 240px;
+            --transition-speed: 0.2s;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-card: #1e2a45;
+            --bg-sidebar: #0f1629;
+            --bg-input: #151d30;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6a6a7a;
+            --accent: #4fc3f7;
+            --accent-hover: #81d4fa;
+            --border: #2a2a4a;
+            --success: #66bb6a;
+            --warning: #ffa726;
+            --danger: #ef5350;
+            --tag-bg: #2a3a5a;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f5f5f5;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --bg-sidebar: #f0f0f0;
+            --bg-input: #f8f8fc;
+            --text-primary: #1a1a2e;
+            --text-secondary: #555568;
+            --text-muted: #888898;
+            --accent: #1976d2;
+            --accent-hover: #1565c0;
+            --border: #dcdce0;
+            --success: #388e3c;
+            --warning: #f57c00;
+            --danger: #d32f2f;
+            --tag-bg: #e3edf7;
+        }
+
+        /* ========================================
+           RESET & BASE
+           ======================================== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            min-height: 100vh;
+            transition: background-color var(--transition-speed), color var(--transition-speed);
+        }
+
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { color: var(--accent-hover); }
+
+        /* ========================================
+           SIDEBAR (same as dashboard)
+           ======================================== */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            z-index: 100;
+        }
+
+        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
+        .sidebar-header h1 { font-size: 1.25rem; font-weight: 700; color: var(--accent); }
+        .sidebar-header .subtitle { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+
+        .sidebar-nav { flex: 1; padding: 12px 0; }
+        .nav-section { padding: 0 12px; margin-bottom: 8px; }
+        .nav-section-label {
+            font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em;
+            color: var(--text-muted); padding: 8px 12px 4px;
+        }
+        .nav-item {
+            display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+            border-radius: 6px; color: var(--text-secondary); font-size: 0.875rem;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .nav-item:hover { background-color: var(--bg-card); color: var(--text-primary); }
+        .nav-item.active { background-color: var(--bg-card); color: var(--accent); font-weight: 500; }
+        .nav-icon { width: 18px; text-align: center; font-size: 1rem; }
+        .nav-badge {
+            margin-left: auto; background-color: var(--accent); color: var(--bg-primary);
+            font-size: 0.7rem; padding: 1px 6px; border-radius: 10px; font-weight: 600;
+        }
+
+        .sidebar-footer { padding: 12px; border-top: 1px solid var(--border); }
+        .theme-toggle {
+            display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+            border-radius: 6px; background: none; border: 1px solid var(--border);
+            color: var(--text-secondary); cursor: pointer; font-size: 0.8rem;
+            width: 100%; transition: all 0.15s;
+        }
+        .theme-toggle:hover { background-color: var(--bg-card); color: var(--text-primary); }
+
+        /* ========================================
+           MAIN CONTENT
+           ======================================== */
+        .main {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 32px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .page-header h2 { font-size: 1.5rem; font-weight: 700; }
+
+        .breadcrumb {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .breadcrumb a { color: var(--text-muted); }
+        .breadcrumb a:hover { color: var(--accent); }
+
+        /* ========================================
+           STEP INDICATOR
+           ======================================== */
+        .steps {
+            display: flex;
+            gap: 0;
+            margin-bottom: 28px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .step {
+            padding: 12px 24px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            position: relative;
+            transition: color 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .step:hover { color: var(--text-secondary); }
+
+        .step.active {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .step.active::after {
+            content: "";
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: var(--accent);
+        }
+
+        .step.completed {
+            color: var(--success);
+        }
+
+        .step-number {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 1.5px solid currentColor;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        .step.completed .step-number {
+            background-color: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        /* ========================================
+           STEP PANELS
+           ======================================== */
+        .step-panel { display: none; }
+        .step-panel.active { display: block; }
+
+        /* ========================================
+           STEP 1: ADD SOURCE
+           ======================================== */
+        .source-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 20px;
+        }
+
+        .source-tab {
+            padding: 10px 20px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.15s;
+        }
+
+        .source-tab:first-child { border-radius: 6px 0 0 6px; }
+        .source-tab:last-child { border-radius: 0 6px 6px 0; }
+        .source-tab:not(:first-child) { border-left: none; }
+
+        .source-tab.active {
+            background-color: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            font-weight: 500;
+        }
+
+        .source-input-area { display: none; }
+        .source-input-area.active { display: block; }
+
+        .form-group { margin-bottom: 16px; }
+
+        .form-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 10px 14px;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            font-family: inherit;
+            transition: border-color 0.15s;
+        }
+
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .form-textarea { resize: vertical; min-height: 200px; line-height: 1.6; }
+
+        .form-hint {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* File upload area */
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: 10px;
+            padding: 48px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--accent);
+            background-color: var(--bg-card);
+        }
+
+        .upload-icon { font-size: 2.5rem; margin-bottom: 12px; color: var(--text-muted); }
+        .upload-text { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 4px; }
+        .upload-hint { font-size: 0.75rem; color: var(--text-muted); }
+
+        /* Uploaded file preview */
+        .file-preview {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        .file-preview.visible { display: flex; }
+
+        .file-icon { font-size: 1.5rem; }
+        .file-info { flex: 1; }
+        .file-name { font-size: 0.85rem; font-weight: 500; }
+        .file-size { font-size: 0.7rem; color: var(--text-muted); }
+        .file-remove {
+            background: none; border: none; color: var(--danger);
+            cursor: pointer; font-size: 1.2rem; padding: 4px;
+        }
+
+        /* Tags input */
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 8px 10px;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            min-height: 42px;
+            align-items: center;
+            cursor: text;
+        }
+
+        .tags-container:focus-within { border-color: var(--accent); }
+
+        .tag-chip {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            background-color: var(--tag-bg);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--accent);
+        }
+
+        .tag-remove {
+            background: none; border: none; color: var(--text-muted);
+            cursor: pointer; font-size: 0.8rem; padding: 0 2px;
+        }
+
+        .tag-input {
+            border: none;
+            background: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            min-width: 80px;
+            flex: 1;
+        }
+
+        /* ========================================
+           STEP 2: SUMMARY PROMPT
+           ======================================== */
+        .prompt-selector {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .prompt-selector .form-select { flex: 1; }
+
+        .btn-new-prompt {
+            padding: 10px 16px;
+            background-color: var(--bg-card);
+            border: 1px dashed var(--border);
+            border-radius: 6px;
+            color: var(--accent);
+            cursor: pointer;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            transition: all 0.15s;
+        }
+
+        .btn-new-prompt:hover {
+            border-color: var(--accent);
+            background-color: var(--bg-input);
+        }
+
+        .prompt-preview-area {
+            background-color: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .prompt-preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .prompt-preview-label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .prompt-edit-hint {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .prompt-text {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-family: inherit;
+            line-height: 1.6;
+            resize: vertical;
+        }
+
+        .prompt-text:focus { outline: none; border-color: var(--accent); }
+
+        /* New prompt modal/inline form */
+        .new-prompt-form {
+            display: none;
+            background-color: var(--bg-card);
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .new-prompt-form.visible { display: block; }
+
+        .new-prompt-form h4 {
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+            color: var(--accent);
+        }
+
+        .skip-summary {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        /* ========================================
+           STEP 3: READ & NOTE
+           ======================================== */
+        .workspace {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            min-height: 500px;
+        }
+
+        .workspace-panel {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .panel-header h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .panel-tabs {
+            display: flex;
+            gap: 0;
+        }
+
+        .panel-tab {
+            padding: 6px 14px;
+            font-size: 0.75rem;
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .panel-tab:first-child { border-radius: 4px 0 0 4px; }
+        .panel-tab:last-child { border-radius: 0 4px 4px 0; }
+        .panel-tab:not(:first-child) { border-left: none; }
+
+        .panel-tab.active {
+            background-color: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .panel-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 18px;
+        }
+
+        /* Source content display */
+        .source-content {
+            font-size: 0.875rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+        }
+
+        .source-content p { margin-bottom: 12px; }
+
+        .source-meta-bar {
+            display: flex;
+            gap: 16px;
+            padding: 10px 18px;
+            border-top: 1px solid var(--border);
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        /* Summary display */
+        .summary-content {
+            display: none;
+            font-size: 0.875rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+        }
+
+        .summary-content.active { display: block; }
+
+        .summary-content ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .summary-content li {
+            padding: 6px 0 6px 16px;
+            position: relative;
+        }
+
+        .summary-content li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        .summary-badge {
+            display: inline-block;
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background-color: var(--tag-bg);
+            color: var(--accent);
+            margin-bottom: 12px;
+        }
+
+        /* Summary dropdown selector */
+        .summary-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .summary-selector .form-select {
+            flex: 1;
+            padding: 6px 10px;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            font-family: inherit;
+        }
+
+        .summary-selector .form-select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .btn-resummarize {
+            padding: 5px 12px;
+            background: none;
+            border: 1px dashed var(--border);
+            border-radius: 5px;
+            color: var(--accent);
+            cursor: pointer;
+            font-size: 0.7rem;
+            white-space: nowrap;
+            transition: all 0.15s;
+        }
+
+        .btn-resummarize:hover {
+            border-color: var(--accent);
+            background-color: var(--bg-input);
+        }
+
+        .summary-body-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .btn-delete {
+            padding: 3px 10px;
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.7rem;
+            transition: all 0.15s;
+        }
+
+        .btn-delete:hover {
+            color: var(--danger);
+            border-color: var(--danger);
+        }
+
+        .no-summary-msg {
+            text-align: center;
+            padding: 32px 16px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .no-summary-msg button {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 8px 20px;
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        /* Note writing area */
+        .note-editor {
+            width: 100%;
+            min-height: 200px;
+            padding: 0;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            font-family: inherit;
+            line-height: 1.8;
+            resize: none;
+        }
+
+        .note-editor:focus { outline: none; }
+
+        .note-editor::placeholder { color: var(--text-muted); }
+
+        .note-toolbar {
+            display: flex;
+            gap: 4px;
+            padding: 10px 18px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .toolbar-btn {
+            padding: 4px 10px;
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.15s;
+        }
+
+        .toolbar-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--text-muted);
+        }
+
+        /* Saved notes list in right panel */
+        .saved-notes-list {
+            border-top: 1px solid var(--border);
+            margin-top: 16px;
+            padding-top: 12px;
+        }
+
+        .saved-notes-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .saved-notes-header h4 {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .saved-note-card {
+            padding: 10px 12px;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .saved-note-card:hover {
+            border-color: var(--accent);
+        }
+
+        .saved-note-card.editing {
+            border-color: var(--accent);
+            background-color: var(--bg-input);
+        }
+
+        .saved-note-title {
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .saved-note-preview {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .saved-note-meta {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            display: flex;
+            gap: 10px;
+        }
+
+        /* ========================================
+           BUTTONS
+           ======================================== */
+        .btn-row {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            border: none;
+        }
+
+        .btn-primary {
+            background-color: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover { background-color: var(--accent-hover); }
+
+        .btn-secondary {
+            background-color: var(--bg-card);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover { color: var(--text-primary); border-color: var(--text-muted); }
+
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .btn-ghost {
+            background: none;
+            color: var(--text-secondary);
+            border: 1px solid transparent;
+        }
+
+        .btn-ghost:hover { color: var(--accent); }
+
+        /* Loading spinner */
+        .spinner {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading .spinner { display: inline-block; }
+    </style>
+</head>
+<body>
+
+    <!-- ==========================================
+         SIDEBAR
+         ========================================== -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h1>SecondBrain</h1>
+            <div class="subtitle">Your knowledge, connected</div>
+        </div>
+        <div class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-label">Main</div>
+                <a class="nav-item" href="01_dashboard.html">
+                    <span class="nav-icon">&#9632;</span> Dashboard
+                </a>
+                <a class="nav-item active" href="02_source_workspace.html">
+                    <span class="nav-icon">&#9998;</span> Notes
+                    <span class="nav-badge">12</span>
+                </a>
+                <a class="nav-item" href="03_knowledge_graph.html">
+                    <span class="nav-icon">&#9672;</span> Knowledge Graph
+                </a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-label">Writing</div>
+                <a class="nav-item" href="04_articles_list.html">
+                    <span class="nav-icon">&#9776;</span> Articles
+                    <span class="nav-badge">3</span>
+                </a>
+                <a class="nav-item" href="#">
+                    <span class="nav-icon">&#9788;</span> Published
+                </a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-label">Insights</div>
+                <a class="nav-item" href="#">
+                    <span class="nav-icon">&#9636;</span> Analytics
+                </a>
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <span id="theme-icon">&#9790;</span>
+                <span id="theme-label">Light mode</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ==========================================
+         MAIN CONTENT
+         ========================================== -->
+    <main class="main">
+
+        <!-- Breadcrumb & Header -->
+        <div class="breadcrumb">
+            <a href="01_dashboard.html">Dashboard</a> / <a href="#">Notes</a> / New Source
+        </div>
+        <div class="page-header">
+            <h2>Source Workspace</h2>
+        </div>
+
+        <!-- Step Indicator -->
+        <div class="steps">
+            <div class="step active" onclick="goToStep(1)">
+                <span class="step-number">1</span> Add Source
+            </div>
+            <div class="step" onclick="goToStep(2)">
+                <span class="step-number">2</span> Summarize
+            </div>
+            <div class="step" onclick="goToStep(3)">
+                <span class="step-number">3</span> Read & Note
+            </div>
+        </div>
+
+        <!-- ==========================================
+             STEP 1: ADD SOURCE
+             ========================================== -->
+        <div class="step-panel active" id="step-1">
+
+            <!-- Source type tabs -->
+            <div class="source-tabs">
+                <button class="source-tab active" onclick="switchSourceTab('write')">Write Note</button>
+                <button class="source-tab" onclick="switchSourceTab('paste')">Paste Text</button>
+                <button class="source-tab" onclick="switchSourceTab('upload')">Upload File</button>
+            </div>
+
+            <!-- Write Note -->
+            <div class="source-input-area active" id="source-write">
+                <div class="form-group">
+                    <label class="form-label">Title</label>
+                    <input type="text" class="form-input" placeholder="What is this about?">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Content</label>
+                    <textarea class="form-textarea" placeholder="Write your thoughts..."></textarea>
+                </div>
+            </div>
+
+            <!-- Paste Text -->
+            <div class="source-input-area" id="source-paste">
+                <div class="form-group">
+                    <label class="form-label">Title</label>
+                    <input type="text" class="form-input" placeholder="Name this source">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Source URL (optional)</label>
+                    <input type="text" class="form-input" placeholder="https://...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Pasted Content</label>
+                    <textarea class="form-textarea" placeholder="Paste text from a website, article, paper..."></textarea>
+                </div>
+            </div>
+
+            <!-- Upload File -->
+            <div class="source-input-area" id="source-upload">
+                <div class="form-group">
+                    <label class="form-label">Title</label>
+                    <input type="text" class="form-input" placeholder="Name this source">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">File</label>
+                    <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+                        <div class="upload-icon">&#8679;</div>
+                        <div class="upload-text">Drop file here or click to browse</div>
+                        <div class="upload-hint">PDF, DOCX, TXT, HTML, PPTX — max 20MB</div>
+                        <input type="file" id="file-input" style="display:none"
+                               accept=".pdf,.docx,.txt,.html,.pptx">
+                    </div>
+                    <div class="file-preview" id="file-preview">
+                        <span class="file-icon">&#128196;</span>
+                        <div class="file-info">
+                            <div class="file-name">transformer-paper.pdf</div>
+                            <div class="file-size">2.4 MB — PDF document</div>
+                        </div>
+                        <button class="file-remove" onclick="removeFile()">&#10005;</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tags (shared across all tabs) -->
+            <div class="form-group">
+                <label class="form-label">Tags</label>
+                <div class="tags-container" onclick="this.querySelector('.tag-input').focus()">
+                    <span class="tag-chip">
+                        AI <button class="tag-remove">&#10005;</button>
+                    </span>
+                    <span class="tag-chip">
+                        Research <button class="tag-remove">&#10005;</button>
+                    </span>
+                    <input type="text" class="tag-input" placeholder="Add tag...">
+                </div>
+                <div class="form-hint">Press Enter to add a tag</div>
+            </div>
+
+            <div class="btn-row">
+                <button class="btn btn-primary" onclick="goToStep(2)">
+                    Next: Summarize &#8594;
+                </button>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             STEP 2: SUMMARIZE
+             ========================================== -->
+        <div class="step-panel" id="step-2">
+
+            <!-- Prompt selector -->
+            <div class="form-group">
+                <label class="form-label">Choose a Summary Prompt</label>
+                <div class="prompt-selector">
+                    <select class="form-select" onchange="loadPromptPreview(this.value)">
+                        <option value="default">Default Summary</option>
+                        <option value="thai">Thai Summary (สรุปเป็นภาษาไทย)</option>
+                        <option value="concepts">Key Concepts Extraction</option>
+                        <option value="cornell">Cornell Notes Format</option>
+                    </select>
+                    <button class="btn-new-prompt" onclick="toggleNewPromptForm()">+ New Prompt</button>
+                </div>
+            </div>
+
+            <!-- New prompt inline form (hidden by default) -->
+            <div class="new-prompt-form" id="new-prompt-form">
+                <h4>Create New Prompt Template</h4>
+                <div class="form-group">
+                    <label class="form-label">Prompt Name</label>
+                    <input type="text" class="form-input" placeholder="e.g., Bullet Point Summary">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Prompt Text</label>
+                    <textarea class="form-textarea" style="min-height: 120px;"
+                        placeholder="Write your prompt here. Use {source_text} where the source content should be inserted."></textarea>
+                    <div class="form-hint">Tip: Use {source_text} as a placeholder for the source content</div>
+                </div>
+                <div class="btn-row" style="margin-top: 12px;">
+                    <button class="btn btn-ghost" onclick="toggleNewPromptForm()">Cancel</button>
+                    <button class="btn btn-primary">Save Prompt</button>
+                </div>
+            </div>
+
+            <!-- Prompt preview / edit before sending -->
+            <div class="prompt-preview-area">
+                <div class="prompt-preview-header">
+                    <span class="prompt-preview-label">Prompt Preview</span>
+                    <span class="prompt-edit-hint">Edit below to customize for this source (won't change the saved template)</span>
+                </div>
+                <textarea class="prompt-text" id="prompt-preview">Summarize the following document. Extract the key ideas, main arguments, and any actionable insights.
+
+Format your response as:
+1. A brief overview paragraph (2-3 sentences)
+2. Key points as bullet points
+3. Any questions or areas worth exploring further
+
+Source text:
+{source_text}</textarea>
+            </div>
+
+            <div class="skip-summary">
+                <input type="checkbox" id="skip-summary">
+                <label for="skip-summary">Skip summary — go straight to note-taking</label>
+            </div>
+
+            <div class="btn-row">
+                <button class="btn btn-secondary" onclick="goToStep(1)">&#8592; Back</button>
+                <button class="btn btn-secondary" onclick="goToStep(3)">Skip to Notes</button>
+                <button class="btn btn-primary" onclick="runSummary()">
+                    <span class="spinner" id="summary-spinner"></span>
+                    Run Summary &#8594;
+                </button>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             STEP 3: READ & NOTE
+             ========================================== -->
+        <div class="step-panel" id="step-3">
+
+            <div class="workspace">
+
+                <!-- Left Panel: Source + Summary -->
+                <div class="workspace-panel">
+                    <div class="panel-header">
+                        <h3>Source</h3>
+                        <div class="panel-tabs">
+                            <button class="panel-tab active" onclick="switchReadTab('original')">Original</button>
+                            <button class="panel-tab" onclick="switchReadTab('summary')">Summaries</button>
+                        </div>
+                    </div>
+
+                    <div class="panel-body">
+                        <!-- Original source text -->
+                        <div class="source-content active" id="read-original">
+                            <p>The Transformer model architecture, introduced in "Attention Is All You Need" (Vaswani et al., 2017), fundamentally changed the landscape of natural language processing and, subsequently, machine learning as a whole.</p>
+                            <p>Unlike previous sequence-to-sequence models that relied on recurrent neural networks (RNNs) or convolutional neural networks (CNNs), the Transformer is based entirely on attention mechanisms, dispensing with recurrence and convolutions entirely.</p>
+                            <p>The key innovation is the self-attention mechanism, which allows the model to weigh the importance of different parts of the input sequence when producing each element of the output. This enables the model to capture long-range dependencies much more effectively than RNNs.</p>
+                            <p>The architecture consists of an encoder and decoder, each composed of stacked layers. Each layer contains multi-head self-attention and position-wise feed-forward networks, with residual connections and layer normalization.</p>
+                        </div>
+
+                        <!-- Summaries view with dropdown -->
+                        <div class="summary-content" id="read-summary">
+                            <div class="summary-selector">
+                                <select class="form-select" onchange="switchSummary(this.value)">
+                                    <option value="summary-default">Default Summary — Jun 27</option>
+                                    <option value="summary-thai">Thai Summary — Jun 27</option>
+                                    <option value="summary-concepts">Key Concepts — Jun 28</option>
+                                </select>
+                                <button class="btn-resummarize" onclick="goToStep(2)">+ New Summary</button>
+                            </div>
+
+                            <!-- Summary: Default -->
+                            <div id="summary-default" class="summary-body active">
+                                <div class="summary-body-header">
+                                    <span class="summary-badge">Default Summary</span>
+                                    <button class="btn-delete" onclick="deleteSummary('summary-default')">Delete</button>
+                                </div>
+
+                                <p><strong>Overview:</strong> The Transformer architecture replaced RNN/CNN-based models with a pure attention mechanism, enabling better capture of long-range dependencies in sequences. It became the foundation for modern NLP models.</p>
+
+                                <p><strong>Key Points:</strong></p>
+                                <ul>
+                                    <li>Eliminates recurrence and convolutions — uses only attention mechanisms</li>
+                                    <li>Self-attention lets the model weigh all parts of input simultaneously</li>
+                                    <li>Architecture has encoder + decoder, each with stacked layers</li>
+                                    <li>Each layer: multi-head attention &#8594; feed-forward &#8594; residual + layer norm</li>
+                                </ul>
+
+                                <p><strong>Worth exploring:</strong></p>
+                                <ul>
+                                    <li>How does multi-head attention differ from single-head?</li>
+                                    <li>What are positional encodings and why are they needed?</li>
+                                </ul>
+                            </div>
+
+                            <!-- Summary: Thai -->
+                            <div id="summary-thai" class="summary-body">
+                                <div class="summary-body-header">
+                                    <span class="summary-badge">Thai Summary</span>
+                                    <button class="btn-delete" onclick="deleteSummary('summary-thai')">Delete</button>
+                                </div>
+
+                                <p><strong>&#3616;&#3634;&#3614;&#3619;&#3623;&#3617;:</strong> &#3626;&#3606;&#3634;&#3611;&#3633;&#3605;&#3618;&#3585;&#3619;&#3619;&#3617; Transformer &#3651;&#3594;&#3657;&#3585;&#3621;&#3652;&#3585; Attention &#3649;&#3607;&#3609;&#3607;&#3637;&#3656; RNN/CNN &#3607;&#3635;&#3651;&#3627;&#3657;&#3626;&#3634;&#3617;&#3634;&#3619;&#3606;&#3592;&#3633;&#3610;&#3588;&#3623;&#3634;&#3617;&#3626;&#3633;&#3617;&#3614;&#3633;&#3609;&#3608;&#3660;&#3619;&#3632;&#3618;&#3632;&#3652;&#3585;&#3621;&#3651;&#3609;&#3621;&#3635;&#3604;&#3633;&#3610;&#3652;&#3604;&#3657;&#3604;&#3637;&#3586;&#3638;&#3657;&#3609;</p>
+
+                                <p><strong>&#3611;&#3619;&#3632;&#3648;&#3604;&#3655;&#3609;&#3626;&#3635;&#3588;&#3633;&#3597;:</strong></p>
+                                <ul>
+                                    <li>&#3652;&#3617;&#3656;&#3651;&#3594;&#3657; recurrence &#3627;&#3619;&#3639;&#3629; convolution — &#3651;&#3594;&#3657; attention &#3629;&#3618;&#3656;&#3634;&#3591;&#3648;&#3604;&#3637;&#3618;&#3623;</li>
+                                    <li>Self-attention &#3594;&#3656;&#3623;&#3618;&#3651;&#3627;&#3657;&#3650;&#3617;&#3648;&#3604;&#3621;&#3614;&#3636;&#3592;&#3634;&#3619;&#3603;&#3634;&#3607;&#3640;&#3585;&#3626;&#3656;&#3623;&#3609;&#3586;&#3629;&#3591; input &#3614;&#3619;&#3657;&#3629;&#3617;&#3585;&#3633;&#3609;</li>
+                                    <li>&#3650;&#3588;&#3619;&#3591;&#3626;&#3619;&#3657;&#3634;&#3591;&#3617;&#3637; encoder + decoder &#3649;&#3605;&#3656;&#3621;&#3632;&#3626;&#3656;&#3623;&#3609;&#3617;&#3637;&#3627;&#3621;&#3634;&#3618;&#3594;&#3633;&#3657;&#3609;</li>
+                                </ul>
+                            </div>
+
+                            <!-- Summary: Key Concepts -->
+                            <div id="summary-concepts" class="summary-body">
+                                <div class="summary-body-header">
+                                    <span class="summary-badge">Key Concepts Extraction</span>
+                                    <button class="btn-delete" onclick="deleteSummary('summary-concepts')">Delete</button>
+                                </div>
+
+                                <p><strong>1. Self-Attention</strong><br>
+                                A mechanism that lets each position in a sequence attend to all other positions. Replaces recurrence for capturing dependencies.</p>
+
+                                <p><strong>2. Multi-Head Attention</strong><br>
+                                Running multiple attention operations in parallel, each learning different relationship patterns. Core building block of each layer.</p>
+
+                                <p><strong>3. Encoder-Decoder Architecture</strong><br>
+                                Two-part structure where the encoder processes input and the decoder generates output. Connected via cross-attention.</p>
+
+                                <p><strong>4. Residual Connections</strong><br>
+                                Skip connections that add the input of a sub-layer to its output. Prevents vanishing gradients in deep networks.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="source-meta-bar">
+                        <span>Source: PDF upload</span>
+                        <span>1,247 words</span>
+                        <span>3 summaries</span>
+                        <span>Added Jun 27</span>
+                    </div>
+                </div>
+
+                <!-- Right Panel: Notes -->
+                <div class="workspace-panel">
+                    <div class="panel-header">
+                        <h3>Your Notes</h3>
+                        <button class="btn-resummarize" onclick="newNote()" id="btn-new-note" style="display:none;">+ New Note</button>
+                    </div>
+
+                    <div class="note-toolbar" id="note-toolbar">
+                        <button class="toolbar-btn" title="Bold"><b>B</b></button>
+                        <button class="toolbar-btn" title="Italic"><i>I</i></button>
+                        <button class="toolbar-btn" title="Heading">H</button>
+                        <button class="toolbar-btn" title="Bullet list">&#8226;</button>
+                        <button class="toolbar-btn" title="Link">&#128279;</button>
+                    </div>
+
+                    <div class="panel-body">
+                        <!-- Note title input -->
+                        <div class="form-group" id="note-title-group">
+                            <input type="text" class="form-input" id="note-title-input"
+                                   placeholder="Note title..."
+                                   style="background:none; border:none; border-bottom:1px solid var(--border); border-radius:0; padding:4px 0; font-size:1rem; font-weight:600; margin-bottom:12px;">
+                        </div>
+
+                        <!-- Note editor -->
+                        <textarea class="note-editor" id="note-editor" placeholder="Write your notes here...
+
+Ideas:
+- What stands out to you?
+- How does this connect to what you already know?
+- What questions does this raise?"></textarea>
+
+                        <!-- Saved notes for this source -->
+                        <div class="saved-notes-list" id="saved-notes-list" style="display:none;">
+                            <div class="saved-notes-header">
+                                <h4>Previous Notes on This Source</h4>
+                            </div>
+
+                            <div class="saved-note-card" onclick="editNote(this, 'First read impressions', 'The self-attention mechanism is the key insight here...')">
+                                <div style="display:flex; justify-content:space-between; align-items:start;">
+                                    <div class="saved-note-title">First read impressions</div>
+                                    <button class="btn-delete" onclick="event.stopPropagation(); deleteNote(this)">Delete</button>
+                                </div>
+                                <div class="saved-note-preview">The self-attention mechanism is the key insight here. It replaces the need for...</div>
+                                <div class="saved-note-meta">
+                                    <span>Jun 27, 2:30 PM</span>
+                                    <span>124 words</span>
+                                </div>
+                            </div>
+
+                            <div class="saved-note-card" onclick="editNote(this, 'Attention mechanism details', 'Multi-head attention runs several attention operations in parallel...')">
+                                <div style="display:flex; justify-content:space-between; align-items:start;">
+                                    <div class="saved-note-title">Attention mechanism details</div>
+                                    <button class="btn-delete" onclick="event.stopPropagation(); deleteNote(this)">Delete</button>
+                                </div>
+                                <div class="saved-note-preview">Multi-head attention runs several attention operations in parallel, each learning...</div>
+                                <div class="saved-note-meta">
+                                    <span>Jun 27, 4:15 PM</span>
+                                    <span>89 words</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="source-meta-bar">
+                        <span>Markdown supported</span>
+                        <span>Auto-saved</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="btn-row">
+                <button class="btn btn-secondary" onclick="goToStep(2)">&#8592; Back to Summary</button>
+                <button class="btn btn-secondary" onclick="saveNote()">Save Note</button>
+                <button class="btn btn-success">Save & Connect to Graph &#8594;</button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ==========================================
+         SCRIPTS
+         ========================================== -->
+    <script>
+        /* ---- Theme Toggle ---- */
+        function toggleTheme() {
+            const html = document.documentElement;
+            const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+            html.setAttribute("data-theme", next);
+            localStorage.setItem("theme", next);
+            updateToggleButton(next);
+        }
+
+        function updateToggleButton(theme) {
+            document.getElementById("theme-icon").textContent = theme === "dark" ? "☾" : "☀";
+            document.getElementById("theme-label").textContent = theme === "dark" ? "Light mode" : "Dark mode";
+        }
+
+        (function () {
+            const saved = localStorage.getItem("theme") || "dark";
+            document.documentElement.setAttribute("data-theme", saved);
+            updateToggleButton(saved);
+        })();
+
+        /* ---- Step Navigation ----
+         *
+         * The page has 3 "step panels" (divs). Only one is visible at a time.
+         * Clicking a step in the indicator bar:
+         * 1. Hides all panels
+         * 2. Shows the selected one
+         * 3. Updates the step indicator (active/completed states)
+         */
+        let currentStep = 1;
+
+        function goToStep(n) {
+            // Hide all panels
+            document.querySelectorAll(".step-panel").forEach(p => p.classList.remove("active"));
+            // Show target panel
+            document.getElementById("step-" + n).classList.add("active");
+
+            // Update step indicators
+            document.querySelectorAll(".step").forEach((s, i) => {
+                s.classList.remove("active", "completed");
+                if (i + 1 === n) s.classList.add("active");
+                if (i + 1 < n) s.classList.add("completed");
+            });
+
+            currentStep = n;
+        }
+
+        /* ---- Source Tab Switching ----
+         *
+         * "Write Note", "Paste Text", "Upload File" are three input forms.
+         * Only one is visible at a time. The tabs switch between them.
+         */
+        function switchSourceTab(tab) {
+            document.querySelectorAll(".source-tab").forEach(t => t.classList.remove("active"));
+            document.querySelectorAll(".source-input-area").forEach(a => a.classList.remove("active"));
+
+            // Activate clicked tab and its area
+            event.target.classList.add("active");
+            document.getElementById("source-" + tab).classList.add("active");
+        }
+
+        /* ---- Read Panel Tab Switching ----
+         *
+         * In Step 3, the left panel can show "Original" source or "Summaries".
+         * "Original" shows the raw source text.
+         * "Summaries" shows a dropdown to pick between multiple AI summaries.
+         */
+        function switchReadTab(tab) {
+            document.querySelectorAll(".panel-tab").forEach(t => t.classList.remove("active"));
+            event.target.classList.add("active");
+
+            document.getElementById("read-original").style.display = tab === "original" ? "block" : "none";
+            document.getElementById("read-summary").style.display = tab === "summary" ? "block" : "none";
+        }
+
+        /* ---- Summary Dropdown Switching ----
+         *
+         * When user picks a different summary from the dropdown,
+         * hide all summary bodies and show only the selected one.
+         */
+        function switchSummary(id) {
+            document.querySelectorAll(".summary-body").forEach(s => {
+                s.classList.remove("active");
+                s.style.display = "none";
+            });
+            const target = document.getElementById(id);
+            if (target) {
+                target.classList.add("active");
+                target.style.display = "block";
+            }
+        }
+
+        // Initialize: show only the first summary
+        (function () {
+            document.querySelectorAll(".summary-body").forEach((s, i) => {
+                s.style.display = i === 0 ? "block" : "none";
+            });
+        })();
+
+        /* ---- Note Management ----
+         *
+         * Handles saving notes and showing them in the "Previous Notes" list.
+         * Clicking a saved note loads it back into the editor for editing.
+         * "+ New Note" clears the editor for a fresh note.
+         */
+        function saveNote() {
+            const title = document.getElementById("note-title-input").value;
+            const content = document.getElementById("note-editor").value;
+            if (!title && !content) return;
+
+            // Show the saved notes list and the "+ New Note" button
+            document.getElementById("saved-notes-list").style.display = "block";
+            document.getElementById("btn-new-note").style.display = "block";
+
+            // Add a new card to the saved notes list
+            const list = document.querySelector(".saved-notes-header");
+            const card = document.createElement("div");
+            card.className = "saved-note-card";
+            card.innerHTML = `
+                <div class="saved-note-title">${title || "Untitled Note"}</div>
+                <div class="saved-note-preview">${content.substring(0, 80)}...</div>
+                <div class="saved-note-meta">
+                    <span>Just now</span>
+                    <span>${content.split(/\s+/).length} words</span>
+                </div>
+            `;
+            card.onclick = function () { editNote(card, title, content); };
+            list.after(card);
+
+            // Clear editor for next note
+            newNote();
+        }
+
+        function newNote() {
+            document.getElementById("note-title-input").value = "";
+            document.getElementById("note-editor").value = "";
+            document.getElementById("note-editor").placeholder = "Write your notes here...\n\nIdeas:\n- What stands out to you?\n- How does this connect to what you already know?\n- What questions does this raise?";
+            // Remove editing highlight from all cards
+            document.querySelectorAll(".saved-note-card").forEach(c => c.classList.remove("editing"));
+        }
+
+        /* ---- Delete Summary ----
+         *
+         * Removes a summary from the DOM and its option from the dropdown.
+         * If the deleted summary was visible, switches to the first remaining one.
+         */
+        function deleteSummary(id) {
+            if (!confirm("Delete this summary?")) return;
+
+            const el = document.getElementById(id);
+            const dropdown = document.querySelector(".summary-selector .form-select");
+
+            // Remove the dropdown option
+            const option = dropdown.querySelector(`option[value="${id}"]`);
+            if (option) option.remove();
+
+            // Remove the summary body
+            if (el) el.remove();
+
+            // Show the first remaining summary
+            const remaining = document.querySelectorAll(".summary-body");
+            if (remaining.length > 0) {
+                remaining[0].style.display = "block";
+                remaining[0].classList.add("active");
+                dropdown.selectedIndex = 0;
+            }
+        }
+
+        /* ---- Delete Note ----
+         *
+         * Removes a saved note card. If it was being edited, clears the editor.
+         */
+        function deleteNote(btn) {
+            if (!confirm("Delete this note?")) return;
+
+            const card = btn.closest(".saved-note-card");
+            const wasEditing = card.classList.contains("editing");
+            card.remove();
+
+            if (wasEditing) newNote();
+
+            // Hide the saved notes section if no cards remain
+            if (document.querySelectorAll(".saved-note-card").length === 0) {
+                document.getElementById("saved-notes-list").style.display = "none";
+            }
+        }
+
+        function editNote(card, title, content) {
+            // Highlight the card being edited
+            document.querySelectorAll(".saved-note-card").forEach(c => c.classList.remove("editing"));
+            card.classList.add("editing");
+            // Load into editor
+            document.getElementById("note-title-input").value = title;
+            document.getElementById("note-editor").value = content;
+            document.getElementById("btn-new-note").style.display = "block";
+        }
+
+        /* ---- Prompt Template Preview ---- */
+        const prompts = {
+            default: `Summarize the following document. Extract the key ideas, main arguments, and any actionable insights.\n\nFormat your response as:\n1. A brief overview paragraph (2-3 sentences)\n2. Key points as bullet points\n3. Any questions or areas worth exploring further\n\nSource text:\n{source_text}`,
+            thai: `สรุปเนื้อหาต่อไปนี้เป็นภาษาไทย\n\nรูปแบบ:\n1. ภาพรวม (2-3 ประโยค)\n2. ประเด็นสำคัญเป็นข้อๆ\n3. คำถามที่น่าสนใจ\n\nเนื้อหา:\n{source_text}`,
+            concepts: `Extract the key concepts from the following text. For each concept:\n- Name the concept\n- Define it in one sentence\n- Note how it relates to other concepts in the text\n\nSource text:\n{source_text}`,
+            cornell: `Convert the following text into Cornell Notes format:\n\n- LEFT COLUMN (Cues): Key questions and terms\n- RIGHT COLUMN (Notes): Detailed notes and explanations\n- BOTTOM (Summary): 3-5 sentence summary\n\nSource text:\n{source_text}`
+        };
+
+        function loadPromptPreview(key) {
+            document.getElementById("prompt-preview").value = prompts[key] || prompts.default;
+        }
+
+        /* ---- New Prompt Form Toggle ---- */
+        function toggleNewPromptForm() {
+            document.getElementById("new-prompt-form").classList.toggle("visible");
+        }
+
+        /* ---- Simulate AI Summary ---- */
+        function runSummary() {
+            // In the real app, this sends the source + prompt to the AI provider
+            // and HTMX would swap in the result. For the mockup, we just go to step 3.
+            goToStep(3);
+        }
+
+        /* ---- File Upload Preview ---- */
+        document.getElementById("file-input").addEventListener("change", function () {
+            if (this.files.length > 0) {
+                document.querySelector(".file-name").textContent = this.files[0].name;
+                document.querySelector(".file-size").textContent =
+                    (this.files[0].size / 1024 / 1024).toFixed(1) + " MB";
+                document.getElementById("file-preview").classList.add("visible");
+            }
+        });
+
+        function removeFile() {
+            document.getElementById("file-input").value = "";
+            document.getElementById("file-preview").classList.remove("visible");
+        }
+    </script>
+
+</body>
+</html>

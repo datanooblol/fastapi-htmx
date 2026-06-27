@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Understanding Attention Mechanisms in Modern AI — SecondBrain</title>
+    <style>
+        [data-theme="dark"] {
+            --bg-primary: #121828;
+            --bg-card: #1e2a45;
+            --bg-input: #151d30;
+            --text-primary: #e8e8e8;
+            --text-secondary: #b0b0c0;
+            --text-muted: #6a6a7a;
+            --accent: #4fc3f7;
+            --accent-hover: #81d4fa;
+            --border: #2a2a4a;
+            --success: #66bb6a;
+            --danger: #ef5350;
+            --tag-bg: #2a3a5a;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-card: #f8f8fc;
+            --bg-input: #f0f0f4;
+            --text-primary: #1a1a2e;
+            --text-secondary: #444458;
+            --text-muted: #888898;
+            --accent: #1976d2;
+            --accent-hover: #1565c0;
+            --border: #e0e0e4;
+            --success: #388e3c;
+            --danger: #d32f2f;
+            --tag-bg: #e3edf7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: Georgia, "Times New Roman", serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.8;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { color: var(--accent-hover); }
+
+        /* TOP NAV (minimal) */
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 32px;
+            border-bottom: 1px solid var(--border);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .top-nav-brand {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .top-nav-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .top-nav-link {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 0.15s;
+        }
+
+        .top-nav-link:hover { color: var(--text-primary); }
+
+        .theme-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.15s;
+        }
+
+        .theme-btn:hover { color: var(--text-primary); border-color: var(--text-muted); }
+
+        /* ARTICLE */
+        .article {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 48px 24px 80px;
+        }
+
+        .article-header { margin-bottom: 32px; }
+
+        .article-tags {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 16px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .tag {
+            font-size: 0.65rem;
+            padding: 2px 10px;
+            border-radius: 12px;
+            background-color: var(--tag-bg);
+            color: var(--accent);
+            font-family: -apple-system, sans-serif;
+        }
+
+        .article-title {
+            font-size: 2.25rem;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 10px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .article-subtitle {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        .article-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-family: -apple-system, sans-serif;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .author-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .author-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .author-date { color: var(--text-muted); }
+
+        /* Article body */
+        .article-body h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 40px 0 16px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: var(--text-primary);
+        }
+
+        .article-body p {
+            margin-bottom: 18px;
+            color: var(--text-secondary);
+        }
+
+        .article-body ul {
+            padding-left: 28px;
+            margin-bottom: 18px;
+        }
+
+        .article-body li {
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+
+        .article-body strong { color: var(--text-primary); }
+
+        .article-body blockquote {
+            padding: 16px 24px;
+            margin: 24px 0;
+            border-left: 3px solid var(--accent);
+            background-color: var(--bg-card);
+            border-radius: 0 8px 8px 0;
+            font-style: italic;
+            color: var(--text-secondary);
+        }
+
+        .ref-superscript {
+            font-size: 0.7rem;
+            vertical-align: super;
+            color: var(--accent);
+            cursor: pointer;
+            font-family: -apple-system, sans-serif;
+        }
+
+        /* Engagement bar */
+        .engagement-bar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 16px 0;
+            margin: 32px 0;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            font-family: -apple-system, sans-serif;
+        }
+
+        .engage-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 14px;
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.15s;
+            font-family: -apple-system, sans-serif;
+        }
+
+        .engage-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        .engage-btn.active {
+            border-color: var(--accent);
+            color: var(--accent);
+            background-color: var(--tag-bg);
+        }
+
+        .engage-icon { font-size: 1rem; }
+
+        .engage-count { font-weight: 500; }
+
+        .share-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 14px;
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.15s;
+            font-family: -apple-system, sans-serif;
+        }
+
+        .share-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        .engage-right {
+            display: flex;
+            gap: 6px;
+            margin-left: auto;
+        }
+
+        /* Download/Export dropdown */
+        .export-wrapper {
+            position: relative;
+        }
+
+        .export-menu {
+            display: none;
+            position: absolute;
+            bottom: calc(100% + 8px);
+            right: 0;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px;
+            min-width: 220px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            z-index: 50;
+            font-family: -apple-system, sans-serif;
+        }
+
+        .export-menu.visible { display: block; }
+
+        .export-menu-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            padding: 6px 10px 4px;
+        }
+
+        .export-menu-sep {
+            height: 1px;
+            background-color: var(--border);
+            margin: 4px 6px;
+        }
+
+        .export-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            transition: all 0.1s;
+        }
+
+        .export-item:hover {
+            background-color: var(--bg-input);
+            color: var(--accent);
+        }
+
+        .export-item-icon {
+            width: 16px;
+            text-align: center;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+
+        .export-item-desc {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+        }
+
+        /* References section */
+        .references {
+            margin: 32px 0;
+            font-family: -apple-system, sans-serif;
+        }
+
+        .references h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .ref-item {
+            display: flex;
+            gap: 8px;
+            padding: 8px 12px;
+            background-color: var(--bg-card);
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-size: 0.8rem;
+            align-items: center;
+        }
+
+        .ref-num {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            min-width: 20px;
+            font-weight: 600;
+        }
+
+        .ref-text { color: var(--text-secondary); flex: 1; }
+
+        .ref-type-badge {
+            font-size: 0.55rem;
+            padding: 1px 6px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .type-note { background-color: var(--tag-bg); color: var(--accent); }
+
+        /* Related articles */
+        .related {
+            margin: 40px 0;
+            font-family: -apple-system, sans-serif;
+        }
+
+        .related h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .related-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .related-card {
+            padding: 16px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .related-card:hover { border-color: var(--accent); }
+
+        .related-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .related-excerpt {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .related-meta {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        /* Footer */
+        .site-footer {
+            text-align: center;
+            padding: 32px;
+            border-top: 1px solid var(--border);
+            font-family: -apple-system, sans-serif;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .site-footer a { color: var(--accent); }
+    </style>
+</head>
+<body>
+
+    <!-- TOP NAV (minimal, public) -->
+    <nav class="top-nav">
+        <a class="top-nav-brand" href="#">SecondBrain</a>
+        <div class="top-nav-actions">
+            <a class="top-nav-link" href="#">Browse Articles</a>
+            <button class="theme-btn" onclick="toggleTheme()">
+                <span id="theme-icon">&#9790;</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ARTICLE -->
+    <article class="article">
+
+        <header class="article-header">
+            <div class="article-tags">
+                <span class="tag">AI</span>
+                <span class="tag">NLP</span>
+                <span class="tag">Architecture</span>
+            </div>
+
+            <h1 class="article-title">Understanding Attention Mechanisms in Modern AI</h1>
+            <p class="article-subtitle">How self-attention replaced recurrence and changed NLP forever</p>
+
+            <div class="article-meta">
+                <div class="author-info">
+                    <div class="avatar">U</div>
+                    <div>
+                        <div class="author-name">Your Name</div>
+                        <div class="author-date">Jun 28, 2026 &middot; 4 min read</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="article-body">
+
+            <h2>Introduction</h2>
+            <p>Imagine trying to understand a paragraph by reading one word at a time, never looking back. That's essentially how early neural networks processed language — and it was a fundamental bottleneck. The Transformer architecture changed everything by introducing a simple but powerful idea: let the model look at all words simultaneously.</p>
+            <p>Before Transformers, recurrent neural networks (RNNs) were the dominant approach for handling sequential data like text. But RNNs had a critical limitation: they processed tokens one at a time, making it difficult to capture relationships between distant parts of a sequence.<span class="ref-superscript">[1]</span></p>
+
+            <h2>The Self-Attention Breakthrough</h2>
+            <p>The key innovation was the <strong>self-attention mechanism</strong>. Rather than processing a sequence step by step, self-attention allows the model to look at all positions simultaneously and compute how much each position should "attend to" every other position.<span class="ref-superscript">[2]</span></p>
+
+            <blockquote>
+                "The Transformer is the first sequence transduction model based entirely on attention, replacing the recurrent layers most commonly used in encoder-decoder architectures with multi-headed self-attention."
+                <br>— Vaswani et al., 2017
+            </blockquote>
+
+            <p>This approach has several concrete advantages:</p>
+            <ul>
+                <li><strong>Parallelization</strong> — all positions can be processed simultaneously on a GPU, unlike the sequential nature of RNNs</li>
+                <li><strong>Long-range dependencies</strong> — any two positions are directly connected, regardless of distance in the sequence</li>
+                <li><strong>Interpretability</strong> — attention weights reveal which parts of the input the model focuses on for each output</li>
+            </ul>
+
+            <h2>Multi-Head Attention</h2>
+            <p>The Transformer doesn't rely on a single attention function — it uses multiple "heads" running in parallel, each learning to focus on different types of relationships. Research has shown that different heads naturally specialize: some track syntactic patterns (which word is the subject of a verb), others capture coreference (linking "it" back to the noun it refers to), and others focus on semantic similarity.</p>
+            <p>Why does this matter? A single attention head might learn to track one type of relationship well, but miss others. By running 8 or 16 heads simultaneously, the model captures multiple relationship types at once — giving it a richer understanding of the input.</p>
+
+            <h2>Conclusion</h2>
+            <p>The attention mechanism didn't just improve on RNNs — it made their core limitation irrelevant. Where RNNs struggled with vanishing gradients across long sequences, self-attention connects any two positions directly, regardless of distance.<span class="ref-superscript">[1]</span></p>
+            <p>This shift from sequential to parallel processing wasn't merely an optimization; it was a conceptual breakthrough that enabled everything from BERT to GPT. The question is no longer "how do we handle long sequences?" but "how do we make attention itself more efficient?" — a problem that spawned innovations like Flash Attention and linear attention variants.</p>
+
+        </div>
+
+        <!-- Engagement -->
+        <div class="engagement-bar">
+            <button class="engage-btn active" onclick="this.classList.toggle('active')">
+                <span class="engage-icon">&#9825;</span>
+                <span class="engage-count">19</span>
+            </button>
+            <button class="engage-btn" onclick="this.classList.toggle('active')">
+                <span class="engage-icon">&#9733;</span>
+                <span>Save</span>
+            </button>
+            <div class="engage-right">
+                <button class="share-btn" onclick="alert('Share options: Copy link, Twitter, LinkedIn')">
+                    <span class="engage-icon">&#8599;</span>
+                    <span>Share</span>
+                </button>
+                <div class="export-wrapper">
+                    <button class="share-btn" onclick="toggleExportMenu(event)">
+                        <span class="engage-icon">&#8615;</span>
+                        <span>Export</span>
+                    </button>
+                    <div class="export-menu" id="export-menu">
+                        <div class="export-menu-label">Download</div>
+                        <div class="export-item" onclick="alert('Downloading as Markdown...')">
+                            <span class="export-item-icon">&#128196;</span>
+                            <div>
+                                <div>Markdown (.md)</div>
+                                <div class="export-item-desc">Universal, editable format</div>
+                            </div>
+                        </div>
+                        <div class="export-item" onclick="alert('Generating PDF...')">
+                            <span class="export-item-icon">&#128462;</span>
+                            <div>
+                                <div>PDF</div>
+                                <div class="export-item-desc">For reading offline or printing</div>
+                            </div>
+                        </div>
+                        <div class="export-item" onclick="alert('Downloading as HTML...')">
+                            <span class="export-item-icon">&lt;/&gt;</span>
+                            <div>
+                                <div>HTML (standalone)</div>
+                                <div class="export-item-desc">Self-contained web page</div>
+                            </div>
+                        </div>
+                        <div class="export-item" onclick="alert('Generating DOCX...')">
+                            <span class="export-item-icon">&#128209;</span>
+                            <div>
+                                <div>DOCX</div>
+                                <div class="export-item-desc">For Word / Google Docs</div>
+                            </div>
+                        </div>
+                        <div class="export-menu-sep"></div>
+                        <div class="export-menu-label">Copy for platform</div>
+                        <div class="export-item" onclick="alert('Copied! Paste into Medium editor.')">
+                            <span class="export-item-icon">M</span>
+                            <div>
+                                <div>Medium</div>
+                                <div class="export-item-desc">HTML copied to clipboard</div>
+                            </div>
+                        </div>
+                        <div class="export-item" onclick="alert('Copied! Paste into Dev.to editor.')">
+                            <span class="export-item-icon">D</span>
+                            <div>
+                                <div>Dev.to / Hashnode</div>
+                                <div class="export-item-desc">Markdown + frontmatter</div>
+                            </div>
+                        </div>
+                        <div class="export-item" onclick="alert('Copied! Paste into LinkedIn.')">
+                            <span class="export-item-icon">in</span>
+                            <div>
+                                <div>LinkedIn</div>
+                                <div class="export-item-desc">Plain text, optimized for feed</div>
+                            </div>
+                        </div>
+                        <div class="export-item" onclick="alert('Copied! Paste into WordPress.')">
+                            <span class="export-item-icon">W</span>
+                            <div>
+                                <div>WordPress</div>
+                                <div class="export-item-desc">HTML with metadata</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- References -->
+        <div class="references">
+            <h3>References</h3>
+            <div class="ref-item">
+                <span class="ref-num">[1]</span>
+                <span class="ref-text">RNN Limitations in Long Sequences</span>
+                <span class="ref-type-badge type-note">Note</span>
+            </div>
+            <div class="ref-item">
+                <span class="ref-num">[2]</span>
+                <span class="ref-text">Transformer Architecture Deep Dive — from Attention Is All You Need (2017)</span>
+                <span class="ref-type-badge type-note">Note</span>
+            </div>
+        </div>
+
+        <!-- Related articles -->
+        <div class="related">
+            <h3>Related Articles</h3>
+            <div class="related-grid">
+                <div class="related-card">
+                    <div class="related-title">Getting Started with DuckDB</div>
+                    <div class="related-excerpt">A lightweight analytical database for modern data workflows. Learn how to use DuckDB for your next project.</div>
+                    <div class="related-meta">Jun 20 &middot; 4 min read &middot; 142 views</div>
+                </div>
+                <div class="related-card">
+                    <div class="related-title">Python Type Hints: A Practical Guide</div>
+                    <div class="related-excerpt">How to use type hints to write better, more maintainable Python code with real examples.</div>
+                    <div class="related-meta">Jun 12 &middot; 5 min read &middot; 89 views</div>
+                </div>
+            </div>
+        </div>
+
+    </article>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        Published on <a href="#">SecondBrain</a> &middot; Built with FastAPI + HTMX
+    </footer>
+
+    <script>
+        function toggleExportMenu(e) {
+            e.stopPropagation();
+            document.getElementById("export-menu").classList.toggle("visible");
+        }
+
+        document.addEventListener("click", function() {
+            document.getElementById("export-menu").classList.remove("visible");
+        });
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+            html.setAttribute("data-theme", next);
+            localStorage.setItem("theme", next);
+            document.getElementById("theme-icon").textContent = next === "dark" ? "☾" : "☀";
+        }
+        (function () {
+            const saved = localStorage.getItem("theme") || "dark";
+            document.documentElement.setAttribute("data-theme", saved);
+            document.getElementById("theme-icon").textContent = saved === "dark" ? "☾" : "☀";
+        })();
+    </script>
+
+</body>
+</html>

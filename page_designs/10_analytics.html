@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecondBrain — Analytics</title>
+    <style>
+        :root { --sidebar-width: 240px; --transition-speed: 0.2s; }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-card: #1e2a45;
+            --bg-sidebar: #0f1629;
+            --bg-input: #151d30;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6a6a7a;
+            --accent: #4fc3f7;
+            --accent-hover: #81d4fa;
+            --border: #2a2a4a;
+            --success: #66bb6a;
+            --warning: #ffa726;
+            --danger: #ef5350;
+            --tag-bg: #2a3a5a;
+            --chart-1: #4fc3f7;
+            --chart-2: #66bb6a;
+            --chart-3: #ffa726;
+            --chart-4: #ab47bc;
+            --chart-5: #ef5350;
+            --bar-bg: #1a2035;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f5f5f5;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --bg-sidebar: #f0f0f0;
+            --bg-input: #f8f8fc;
+            --text-primary: #1a1a2e;
+            --text-secondary: #555568;
+            --text-muted: #888898;
+            --accent: #1976d2;
+            --accent-hover: #1565c0;
+            --border: #dcdce0;
+            --success: #388e3c;
+            --warning: #f57c00;
+            --danger: #d32f2f;
+            --tag-bg: #e3edf7;
+            --chart-1: #1976d2;
+            --chart-2: #388e3c;
+            --chart-3: #f57c00;
+            --chart-4: #7b1fa2;
+            --chart-5: #d32f2f;
+            --bar-bg: #e8e8ec;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            min-height: 100vh;
+            transition: background-color var(--transition-speed), color var(--transition-speed);
+        }
+
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { color: var(--accent-hover); }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: var(--sidebar-width); background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border); display: flex; flex-direction: column;
+            position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+        }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
+        .sidebar-header h1 { font-size: 1.25rem; font-weight: 700; color: var(--accent); }
+        .sidebar-header .subtitle { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+        .sidebar-nav { flex: 1; padding: 12px 0; }
+        .nav-section { padding: 0 12px; margin-bottom: 8px; }
+        .nav-section-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); padding: 8px 12px 4px; }
+        .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 6px; color: var(--text-secondary); font-size: 0.875rem; cursor: pointer; transition: all 0.15s; }
+        .nav-item:hover { background-color: var(--bg-card); color: var(--text-primary); }
+        .nav-item.active { background-color: var(--bg-card); color: var(--accent); font-weight: 500; }
+        .nav-icon { width: 18px; text-align: center; font-size: 1rem; }
+        .nav-badge { margin-left: auto; background-color: var(--accent); color: var(--bg-primary); font-size: 0.7rem; padding: 1px 6px; border-radius: 10px; font-weight: 600; }
+        .sidebar-footer { padding: 12px; border-top: 1px solid var(--border); }
+        .theme-toggle { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; background: none; border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; font-size: 0.8rem; width: 100%; transition: all 0.15s; }
+        .theme-toggle:hover { background-color: var(--bg-card); color: var(--text-primary); }
+
+        /* MAIN */
+        .main {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 32px;
+            max-width: 1100px;
+            overflow-y: auto;
+        }
+
+        /* HEADER */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .page-header h2 { font-size: 1.5rem; font-weight: 700; }
+
+        .date-range {
+            display: flex; gap: 0;
+        }
+
+        .date-btn {
+            padding: 6px 14px;
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.15s;
+        }
+
+        .date-btn:first-child { border-radius: 6px 0 0 6px; }
+        .date-btn:last-child { border-radius: 0 6px 6px 0; }
+        .date-btn:not(:first-child) { border-left: none; }
+        .date-btn.active { background-color: var(--accent); border-color: var(--accent); color: white; }
+
+        /* STATS CARDS */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .stat-card-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .stat-card-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .stat-card-change {
+            font-size: 0.7rem;
+        }
+
+        .change-up { color: var(--success); }
+        .change-down { color: var(--danger); }
+        .change-flat { color: var(--text-muted); }
+
+        /* CHART CARDS */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .chart-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .chart-card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .chart-header h3 { font-size: 0.9rem; font-weight: 600; }
+
+        .chart-header-right {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .chart-body {
+            padding: 18px;
+        }
+
+        /* Mock line chart using CSS */
+        .line-chart {
+            height: 180px;
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            padding-top: 20px;
+            position: relative;
+        }
+
+        .line-chart-bar {
+            flex: 1;
+            background-color: var(--chart-1);
+            border-radius: 2px 2px 0 0;
+            transition: all 0.3s;
+            opacity: 0.7;
+            position: relative;
+        }
+
+        .line-chart-bar:hover {
+            opacity: 1;
+        }
+
+        .line-chart-bar:hover::after {
+            content: attr(data-label);
+            position: absolute;
+            bottom: calc(100% + 6px);
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+            z-index: 10;
+        }
+
+        .chart-x-axis {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0 0;
+            font-size: 0.6rem;
+            color: var(--text-muted);
+        }
+
+        /* Horizontal bar chart */
+        .h-bar-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .h-bar-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .h-bar-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            min-width: 120px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .h-bar-track {
+            flex: 1;
+            height: 18px;
+            background-color: var(--bar-bg);
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .h-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s;
+            display: flex;
+            align-items: center;
+            padding-left: 8px;
+        }
+
+        .h-bar-value {
+            font-size: 0.6rem;
+            color: white;
+            font-weight: 600;
+        }
+
+        .h-bar-count {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            min-width: 40px;
+            text-align: right;
+        }
+
+        /* Donut chart (CSS only) */
+        .donut-container {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .donut {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .donut-center {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70px; height: 70px;
+            border-radius: 50%;
+            background-color: var(--bg-card);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .donut-total {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .donut-label {
+            font-size: 0.55rem;
+            color: var(--text-muted);
+        }
+
+        .donut-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .legend-dot {
+            width: 8px; height: 8px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .legend-value {
+            margin-left: auto;
+            font-weight: 600;
+            color: var(--text-primary);
+            min-width: 30px;
+            text-align: right;
+        }
+
+        /* ARTICLE TABLE */
+        .table-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table-header h3 { font-size: 0.9rem; font-weight: 600; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            padding: 10px 16px;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-muted);
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-weight: 500;
+        }
+
+        thead th.num { text-align: right; }
+
+        tbody td {
+            padding: 12px 16px;
+            font-size: 0.8rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        tbody td.num {
+            text-align: right;
+            font-weight: 500;
+            font-variant-numeric: tabular-nums;
+        }
+
+        tbody tr:last-child td { border-bottom: none; }
+
+        tbody tr:hover { background-color: var(--bg-input); }
+
+        .table-article-title {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .table-status {
+            font-size: 0.6rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        .table-status.published { background-color: var(--tag-bg); color: var(--success); }
+
+        .table-sparkline {
+            display: flex;
+            align-items: flex-end;
+            gap: 1px;
+            height: 20px;
+        }
+
+        .spark-bar {
+            width: 3px;
+            background-color: var(--accent);
+            border-radius: 1px;
+            opacity: 0.6;
+        }
+
+        /* Mini bar for engagement breakdown */
+        .engagement-mini {
+            display: flex;
+            gap: 8px;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .engagement-mini span {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .engagement-mini .em-icon { font-size: 0.75rem; }
+
+        .tag {
+            font-size: 0.6rem; padding: 1px 6px; border-radius: 3px;
+            background-color: var(--tag-bg); color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h1>SecondBrain</h1>
+            <div class="subtitle">Your knowledge, connected</div>
+        </div>
+        <div class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-label">Main</div>
+                <a class="nav-item" href="01_dashboard.html"><span class="nav-icon">&#9632;</span> Dashboard</a>
+                <a class="nav-item" href="05_notes_list.html"><span class="nav-icon">&#9998;</span> Notes <span class="nav-badge">12</span></a>
+                <a class="nav-item" href="07_knowledge_graph.html"><span class="nav-icon">&#9672;</span> Knowledge Graph</a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-label">Writing</div>
+                <a class="nav-item" href="06_articles_list.html"><span class="nav-icon">&#9776;</span> Articles <span class="nav-badge">5</span></a>
+                <a class="nav-item" href="#"><span class="nav-icon">&#9788;</span> Published</a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-label">Insights</div>
+                <a class="nav-item active" href="10_analytics.html"><span class="nav-icon">&#9636;</span> Analytics</a>
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <span id="theme-icon">&#9790;</span>
+                <span id="theme-label">Light mode</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <!-- Header with date range -->
+        <div class="page-header">
+            <h2>Analytics</h2>
+            <div class="date-range">
+                <button class="date-btn" onclick="switchRange(this)">7d</button>
+                <button class="date-btn active" onclick="switchRange(this)">30d</button>
+                <button class="date-btn" onclick="switchRange(this)">90d</button>
+                <button class="date-btn" onclick="switchRange(this)">All</button>
+            </div>
+        </div>
+
+        <!-- Top-level stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-card-label">Total Views</div>
+                <div class="stat-card-value">231</div>
+                <div class="stat-card-change change-up">&#8593; 24% vs last period</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-label">Likes</div>
+                <div class="stat-card-value">30</div>
+                <div class="stat-card-change change-up">&#8593; 15%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-label">Saves</div>
+                <div class="stat-card-value">12</div>
+                <div class="stat-card-change change-up">&#8593; 33%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-label">Shares</div>
+                <div class="stat-card-value">8</div>
+                <div class="stat-card-change change-flat">&#8594; same</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-label">Downloads</div>
+                <div class="stat-card-value">5</div>
+                <div class="stat-card-change change-up">&#8593; new</div>
+            </div>
+        </div>
+
+        <!-- Charts row -->
+        <div class="charts-grid">
+
+            <!-- Views over time -->
+            <div class="chart-card full-width">
+                <div class="chart-header">
+                    <h3>Views Over Time</h3>
+                    <div class="chart-header-right">Last 30 days</div>
+                </div>
+                <div class="chart-body">
+                    <div class="line-chart">
+                        <div class="line-chart-bar" style="height:20%" data-label="Jun 1: 3"></div>
+                        <div class="line-chart-bar" style="height:15%" data-label="Jun 2: 2"></div>
+                        <div class="line-chart-bar" style="height:25%" data-label="Jun 3: 4"></div>
+                        <div class="line-chart-bar" style="height:18%" data-label="Jun 4: 3"></div>
+                        <div class="line-chart-bar" style="height:30%" data-label="Jun 5: 5"></div>
+                        <div class="line-chart-bar" style="height:22%" data-label="Jun 6: 4"></div>
+                        <div class="line-chart-bar" style="height:12%" data-label="Jun 7: 2"></div>
+                        <div class="line-chart-bar" style="height:28%" data-label="Jun 8: 5"></div>
+                        <div class="line-chart-bar" style="height:35%" data-label="Jun 9: 6"></div>
+                        <div class="line-chart-bar" style="height:40%" data-label="Jun 10: 7"></div>
+                        <div class="line-chart-bar" style="height:32%" data-label="Jun 11: 5"></div>
+                        <div class="line-chart-bar" style="height:25%" data-label="Jun 12: 4"></div>
+                        <div class="line-chart-bar" style="height:38%" data-label="Jun 13: 6"></div>
+                        <div class="line-chart-bar" style="height:42%" data-label="Jun 14: 7"></div>
+                        <div class="line-chart-bar" style="height:35%" data-label="Jun 15: 6"></div>
+                        <div class="line-chart-bar" style="height:28%" data-label="Jun 16: 5"></div>
+                        <div class="line-chart-bar" style="height:45%" data-label="Jun 17: 8"></div>
+                        <div class="line-chart-bar" style="height:50%" data-label="Jun 18: 9"></div>
+                        <div class="line-chart-bar" style="height:55%" data-label="Jun 19: 10"></div>
+                        <div class="line-chart-bar" style="height:65%" data-label="Jun 20: 12"></div>
+                        <div class="line-chart-bar" style="height:58%" data-label="Jun 21: 10"></div>
+                        <div class="line-chart-bar" style="height:48%" data-label="Jun 22: 8"></div>
+                        <div class="line-chart-bar" style="height:52%" data-label="Jun 23: 9"></div>
+                        <div class="line-chart-bar" style="height:60%" data-label="Jun 24: 11"></div>
+                        <div class="line-chart-bar" style="height:72%" data-label="Jun 25: 13"></div>
+                        <div class="line-chart-bar" style="height:68%" data-label="Jun 26: 12"></div>
+                        <div class="line-chart-bar" style="height:80%" data-label="Jun 27: 15"></div>
+                        <div class="line-chart-bar" style="height:75%" data-label="Jun 28: 14"></div>
+                    </div>
+                    <div class="chart-x-axis">
+                        <span>Jun 1</span>
+                        <span>Jun 7</span>
+                        <span>Jun 14</span>
+                        <span>Jun 21</span>
+                        <span>Jun 28</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top articles bar chart -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Top Articles</h3>
+                    <div class="chart-header-right">by views</div>
+                </div>
+                <div class="chart-body">
+                    <div class="h-bar-chart">
+                        <div class="h-bar-item">
+                            <div class="h-bar-label">Getting Started with DuckDB</div>
+                            <div class="h-bar-track">
+                                <div class="h-bar-fill" style="width:100%; background-color:var(--chart-1)">
+                                    <span class="h-bar-value">142</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="h-bar-item">
+                            <div class="h-bar-label">Python Type Hints</div>
+                            <div class="h-bar-track">
+                                <div class="h-bar-fill" style="width:63%; background-color:var(--chart-2)">
+                                    <span class="h-bar-value">89</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Engagement breakdown donut -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Engagement Breakdown</h3>
+                    <div class="chart-header-right">all time</div>
+                </div>
+                <div class="chart-body">
+                    <div class="donut-container">
+                        <div class="donut" style="background: conic-gradient(
+                            var(--chart-1) 0% 54%,
+                            var(--chart-2) 54% 76%,
+                            var(--chart-3) 76% 89%,
+                            var(--chart-4) 89% 100%
+                        );">
+                            <div class="donut-center">
+                                <span class="donut-total">55</span>
+                                <span class="donut-label">actions</span>
+                            </div>
+                        </div>
+                        <div class="donut-legend">
+                            <div class="legend-item">
+                                <span class="legend-dot" style="background:var(--chart-1)"></span>
+                                Likes
+                                <span class="legend-value">30</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-dot" style="background:var(--chart-2)"></span>
+                                Saves
+                                <span class="legend-value">12</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-dot" style="background:var(--chart-3)"></span>
+                                Shares
+                                <span class="legend-value">8</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-dot" style="background:var(--chart-4)"></span>
+                                Downloads
+                                <span class="legend-value">5</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export/platform usage -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Export & Cross-post</h3>
+                    <div class="chart-header-right">all time</div>
+                </div>
+                <div class="chart-body">
+                    <div class="h-bar-chart">
+                        <div class="h-bar-item">
+                            <div class="h-bar-label">Markdown</div>
+                            <div class="h-bar-track">
+                                <div class="h-bar-fill" style="width:80%; background-color:var(--chart-1)">
+                                    <span class="h-bar-value">4</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="h-bar-item">
+                            <div class="h-bar-label">Medium</div>
+                            <div class="h-bar-track">
+                                <div class="h-bar-fill" style="width:60%; background-color:var(--chart-3)">
+                                    <span class="h-bar-value">3</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="h-bar-item">
+                            <div class="h-bar-label">Dev.to</div>
+                            <div class="h-bar-track">
+                                <div class="h-bar-fill" style="width:40%; background-color:var(--chart-2)">
+                                    <span class="h-bar-value">2</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="h-bar-item">
+                            <div class="h-bar-label">PDF</div>
+                            <div class="h-bar-track">
+                                <div class="h-bar-fill" style="width:20%; background-color:var(--chart-4)">
+                                    <span class="h-bar-value">1</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent activity -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Recent Activity</h3>
+                    <div class="chart-header-right">last 7 days</div>
+                </div>
+                <div class="chart-body">
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <div style="display:flex; align-items:center; gap:8px; font-size:0.75rem;">
+                            <span style="color:var(--success); font-size:0.85rem;">&#9825;</span>
+                            <span style="color:var(--text-secondary);">Someone liked <strong>Getting Started with DuckDB</strong></span>
+                            <span style="margin-left:auto; font-size:0.65rem; color:var(--text-muted);">2h ago</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px; font-size:0.75rem;">
+                            <span style="color:var(--accent); font-size:0.85rem;">&#8599;</span>
+                            <span style="color:var(--text-secondary);">Someone shared <strong>Python Type Hints</strong></span>
+                            <span style="margin-left:auto; font-size:0.65rem; color:var(--text-muted);">5h ago</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px; font-size:0.75rem;">
+                            <span style="color:var(--warning); font-size:0.85rem;">&#9733;</span>
+                            <span style="color:var(--text-secondary);">Someone saved <strong>Getting Started with DuckDB</strong></span>
+                            <span style="margin-left:auto; font-size:0.65rem; color:var(--text-muted);">1d ago</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px; font-size:0.75rem;">
+                            <span style="color:var(--chart-4); font-size:0.85rem;">&#8615;</span>
+                            <span style="color:var(--text-secondary);">Someone exported <strong>DuckDB</strong> as Markdown</span>
+                            <span style="margin-left:auto; font-size:0.65rem; color:var(--text-muted);">2d ago</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px; font-size:0.75rem;">
+                            <span style="color:var(--success); font-size:0.85rem;">&#9825;</span>
+                            <span style="color:var(--text-secondary);">3 people liked <strong>Python Type Hints</strong></span>
+                            <span style="margin-left:auto; font-size:0.65rem; color:var(--text-muted);">3d ago</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Articles detail table -->
+        <div class="table-card">
+            <div class="table-header">
+                <h3>Article Performance</h3>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Article</th>
+                        <th>Status</th>
+                        <th>Published</th>
+                        <th class="num">Views</th>
+                        <th class="num">Likes</th>
+                        <th class="num">Saves</th>
+                        <th class="num">Shares</th>
+                        <th class="num">Downloads</th>
+                        <th>Trend (7d)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="table-article-title">Getting Started with DuckDB</div>
+                            <div class="engagement-mini">
+                                <span class="tag">Database</span>
+                                <span class="tag">DuckDB</span>
+                            </div>
+                        </td>
+                        <td><span class="table-status published">Published</span></td>
+                        <td style="font-size:0.75rem; color:var(--text-muted);">Jun 20</td>
+                        <td class="num">142</td>
+                        <td class="num">18</td>
+                        <td class="num">7</td>
+                        <td class="num">5</td>
+                        <td class="num">3</td>
+                        <td>
+                            <div class="table-sparkline">
+                                <div class="spark-bar" style="height:40%"></div>
+                                <div class="spark-bar" style="height:55%"></div>
+                                <div class="spark-bar" style="height:45%"></div>
+                                <div class="spark-bar" style="height:70%"></div>
+                                <div class="spark-bar" style="height:85%"></div>
+                                <div class="spark-bar" style="height:100%"></div>
+                                <div class="spark-bar" style="height:90%"></div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="table-article-title">Python Type Hints: A Practical Guide</div>
+                            <div class="engagement-mini">
+                                <span class="tag">Python</span>
+                                <span class="tag">Best Practices</span>
+                            </div>
+                        </td>
+                        <td><span class="table-status published">Published</span></td>
+                        <td style="font-size:0.75rem; color:var(--text-muted);">Jun 12</td>
+                        <td class="num">89</td>
+                        <td class="num">12</td>
+                        <td class="num">5</td>
+                        <td class="num">3</td>
+                        <td class="num">2</td>
+                        <td>
+                            <div class="table-sparkline">
+                                <div class="spark-bar" style="height:60%"></div>
+                                <div class="spark-bar" style="height:50%"></div>
+                                <div class="spark-bar" style="height:40%"></div>
+                                <div class="spark-bar" style="height:35%"></div>
+                                <div class="spark-bar" style="height:30%"></div>
+                                <div class="spark-bar" style="height:45%"></div>
+                                <div class="spark-bar" style="height:40%"></div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+            html.setAttribute("data-theme", next);
+            localStorage.setItem("theme", next);
+            updateToggleButton(next);
+        }
+        function updateToggleButton(theme) {
+            document.getElementById("theme-icon").textContent = theme === "dark" ? "☾" : "☀";
+            document.getElementById("theme-label").textContent = theme === "dark" ? "Light mode" : "Dark mode";
+        }
+        (function () {
+            const saved = localStorage.getItem("theme") || "dark";
+            document.documentElement.setAttribute("data-theme", saved);
+            updateToggleButton(saved);
+        })();
+
+        function switchRange(btn) {
+            document.querySelectorAll(".date-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SecondBrain{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    {% block head %}{% endblock %}
+</head>
+<body>
+
+    {% include "components/sidebar.html" %}
+
+    <main class="main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="{{ url_for('static', path='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+
+</body>
+</html>

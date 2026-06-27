@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecondBrain — Knowledge Graph</title>
+    <style>
+        :root { --sidebar-width: 240px; --transition-speed: 0.2s; }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-card: #1e2a45;
+            --bg-sidebar: #0f1629;
+            --bg-input: #151d30;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6a6a7a;
+            --accent: #4fc3f7;
+            --accent-hover: #81d4fa;
+            --border: #2a2a4a;
+            --success: #66bb6a;
+            --warning: #ffa726;
+            --danger: #ef5350;
+            --tag-bg: #2a3a5a;
+            --node-note: #4fc3f7;
+            --node-source: #66bb6a;
+            --node-summary: #ffa726;
+            --node-article: #ab47bc;
+            --node-concept: #ec407a;
+            --edge-confirmed: #4fc3f7;
+            --edge-suggested: #3a3a5a;
+            --graph-bg: #121828;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f5f5f5;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --bg-sidebar: #f0f0f0;
+            --bg-input: #f8f8fc;
+            --text-primary: #1a1a2e;
+            --text-secondary: #555568;
+            --text-muted: #888898;
+            --accent: #1976d2;
+            --accent-hover: #1565c0;
+            --border: #dcdce0;
+            --success: #388e3c;
+            --warning: #f57c00;
+            --danger: #d32f2f;
+            --tag-bg: #e3edf7;
+            --node-note: #1976d2;
+            --node-source: #388e3c;
+            --node-summary: #f57c00;
+            --node-article: #7b1fa2;
+            --node-concept: #c2185b;
+            --edge-confirmed: #1976d2;
+            --edge-suggested: #dcdce0;
+            --graph-bg: #fafafa;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            min-height: 100vh;
+            transition: background-color var(--transition-speed), color var(--transition-speed);
+        }
+
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { color: var(--accent-hover); }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: var(--sidebar-width); background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border); display: flex; flex-direction: column;
+            position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+        }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
+        .sidebar-header h1 { font-size: 1.25rem; font-weight: 700; color: var(--accent); }
+        .sidebar-header .subtitle { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+        .sidebar-nav { flex: 1; padding: 12px 0; }
+        .nav-section { padding: 0 12px; margin-bottom: 8px; }
+        .nav-section-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); padding: 8px 12px 4px; }
+        .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 6px; color: var(--text-secondary); font-size: 0.875rem; cursor: pointer; transition: all 0.15s; }
+        .nav-item:hover { background-color: var(--bg-card); color: var(--text-primary); }
+        .nav-item.active { background-color: var(--bg-card); color: var(--accent); font-weight: 500; }
+        .nav-icon { width: 18px; text-align: center; font-size: 1rem; }
+        .nav-badge { margin-left: auto; background-color: var(--accent); color: var(--bg-primary); font-size: 0.7rem; padding: 1px 6px; border-radius: 10px; font-weight: 600; }
+        .sidebar-footer { padding: 12px; border-top: 1px solid var(--border); }
+        .theme-toggle { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; background: none; border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; font-size: 0.8rem; width: 100%; transition: all 0.15s; }
+        .theme-toggle:hover { background-color: var(--bg-card); color: var(--text-primary); }
+
+        /* WORKSPACE LAYOUT */
+        .workspace {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* GRAPH AREA */
+        .graph-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Top toolbar */
+        .graph-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border);
+            background-color: var(--bg-secondary);
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+
+        .graph-toolbar h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-right: 8px;
+        }
+
+        .toolbar-sep {
+            width: 1px; height: 24px;
+            background-color: var(--border);
+        }
+
+        .graph-search {
+            padding: 6px 12px;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            font-family: inherit;
+            width: 220px;
+        }
+
+        .graph-search:focus { outline: none; border-color: var(--accent); }
+
+        .btn {
+            padding: 6px 16px; border-radius: 6px; font-size: 0.75rem;
+            font-weight: 500; cursor: pointer; transition: all 0.15s; border: none;
+        }
+        .btn-primary { background-color: var(--accent); color: white; }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-secondary { background-color: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border); }
+        .btn-secondary:hover { color: var(--text-primary); border-color: var(--text-muted); }
+        .btn-success { background-color: var(--success); color: white; }
+        .btn-warning { background-color: var(--warning); color: white; }
+        .btn-concept { background-color: var(--node-concept); color: white; }
+
+        /* Node type filter toggles */
+        .node-filters {
+            display: flex;
+            gap: 6px;
+            padding: 8px 20px;
+            border-bottom: 1px solid var(--border);
+            background-color: var(--bg-secondary);
+            flex-shrink: 0;
+            align-items: center;
+        }
+
+        .node-filters-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-right: 4px;
+        }
+
+        .node-filter {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            user-select: none;
+            border: 1px solid var(--border);
+            background: none;
+            color: var(--text-muted);
+        }
+
+        .node-filter.active { border-color: currentColor; }
+
+        .node-filter .filter-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .node-filter.active .filter-label { color: var(--text-primary); }
+
+        .filter-count {
+            font-size: 0.6rem;
+            opacity: 0.7;
+        }
+
+        .edge-filters {
+            display: flex;
+            gap: 6px;
+            margin-left: auto;
+            align-items: center;
+        }
+
+        .edge-filter {
+            display: flex; align-items: center; gap: 4px;
+            font-size: 0.65rem; color: var(--text-muted);
+            cursor: pointer; user-select: none;
+        }
+
+        .edge-filter input { accent-color: var(--accent); width: 12px; height: 12px; }
+
+        /* GRAPH CANVAS */
+        .graph-canvas {
+            flex: 1;
+            background-color: var(--graph-bg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* SVG mock graph */
+        .graph-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Zoom controls */
+        .zoom-controls {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 4px;
+        }
+
+        .zoom-btn {
+            padding: 4px 10px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.15s;
+            border-radius: 4px;
+        }
+
+        .zoom-btn:hover { background-color: var(--bg-input); color: var(--accent); }
+
+        .zoom-level {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            padding: 0 8px;
+            min-width: 36px;
+            text-align: center;
+        }
+
+        /* Graph stats */
+        .graph-stats {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            display: flex;
+            gap: 16px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 14px;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .graph-stats strong { color: var(--text-secondary); }
+
+        /* Hover tooltip */
+        .node-tooltip {
+            display: none;
+            position: absolute;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            pointer-events: none;
+            z-index: 50;
+            max-width: 260px;
+        }
+
+        .node-tooltip.visible { display: block; }
+
+        .tooltip-type {
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            margin-bottom: 2px;
+        }
+
+        .tooltip-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .tooltip-meta {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .tooltip-edge {
+            margin-top: 4px;
+            padding-top: 4px;
+            border-top: 1px solid var(--border);
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* DETAIL PANEL (slides in from right) */
+        .detail-panel {
+            width: 0;
+            overflow: hidden;
+            border-left: 1px solid var(--border);
+            background-color: var(--bg-secondary);
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .detail-panel.open { width: 360px; }
+
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .detail-header h3 { font-size: 0.9rem; font-weight: 600; }
+
+        .detail-close {
+            background: none; border: none; color: var(--text-muted);
+            cursor: pointer; font-size: 1.1rem; padding: 2px 6px;
+        }
+
+        .detail-close:hover { color: var(--text-primary); }
+
+        .detail-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 18px;
+        }
+
+        /* Detail panel content */
+        .detail-type {
+            font-size: 0.6rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 2px 8px;
+            border-radius: 3px;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+
+        .detail-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .detail-meta {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .detail-section {
+            margin-bottom: 16px;
+        }
+
+        .detail-section-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .detail-content {
+            font-size: 0.8rem;
+            line-height: 1.7;
+            color: var(--text-secondary);
+        }
+
+        .detail-content p { margin-bottom: 8px; }
+
+        .detail-content ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .detail-content li {
+            padding: 3px 0 3px 14px;
+            position: relative;
+            font-size: 0.75rem;
+        }
+
+        .detail-content li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+        }
+
+        /* Connected items list */
+        .connected-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            border-radius: 5px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+
+        .connected-item:hover { background-color: var(--bg-input); }
+
+        .connected-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .connected-name { flex: 1; color: var(--text-secondary); }
+
+        .connected-relation {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .tag {
+            font-size: 0.6rem; padding: 1px 6px; border-radius: 3px;
+            background-color: var(--tag-bg); color: var(--accent);
+            display: inline-block; margin: 2px 2px 2px 0;
+        }
+
+        .detail-actions {
+            padding: 12px 18px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+
+        /* HEALTH CHECK PANEL */
+        .health-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 480px;
+            max-height: 70vh;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            z-index: 80;
+            overflow: hidden;
+            flex-direction: column;
+            display: none;
+        }
+
+        .health-panel.visible { display: flex; }
+
+        .health-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .health-header h3 { font-size: 0.95rem; font-weight: 600; }
+
+        .health-body {
+            padding: 16px 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .health-group {
+            margin-bottom: 16px;
+        }
+
+        .health-group-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .health-group-icon { font-size: 1rem; }
+
+        .health-item {
+            padding: 8px 10px;
+            background-color: var(--bg-input);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .health-item-action {
+            font-size: 0.65rem;
+            color: var(--accent);
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+
+        .health-footer {
+            padding: 12px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        /* QUERY BAR */
+        .query-bar {
+            display: none;
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 520px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--accent);
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            z-index: 60;
+            overflow: hidden;
+        }
+
+        .query-bar.visible { display: block; }
+
+        .query-input-row {
+            display: flex;
+            gap: 8px;
+            padding: 12px 16px;
+        }
+
+        .query-input {
+            flex: 1;
+            padding: 8px 12px;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-family: inherit;
+        }
+
+        .query-input:focus { outline: none; border-color: var(--accent); }
+
+        .query-send {
+            padding: 8px 16px;
+            background-color: var(--accent);
+            border: none; border-radius: 6px;
+            color: white; cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .query-close {
+            position: absolute;
+            top: 14px; right: 14px;
+            background: none; border: none;
+            color: var(--text-muted); cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .query-result {
+            padding: 0 16px 16px;
+            font-size: 0.8rem;
+            line-height: 1.7;
+            color: var(--text-secondary);
+        }
+
+        .query-result-header {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .query-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+            justify-content: flex-end;
+        }
+
+        /* CREATE CONCEPT FORM */
+        .concept-form {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 420px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--node-concept);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            z-index: 80;
+            padding: 24px;
+        }
+
+        .concept-form.visible { display: block; }
+
+        .concept-form h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--node-concept);
+            margin-bottom: 16px;
+        }
+
+        .form-group { margin-bottom: 14px; }
+
+        .form-label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 8px 12px;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            font-family: inherit;
+        }
+
+        .form-input:focus, .form-textarea:focus { outline: none; border-color: var(--accent); }
+
+        .form-textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+
+        .form-hint { font-size: 0.65rem; color: var(--text-muted); margin-top: 3px; }
+
+        .form-actions {
+            display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px;
+        }
+
+        /* Overlay backdrop */
+        .overlay {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0,0,0,0.3);
+            z-index: 70;
+        }
+
+        .overlay.visible { display: block; }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h1>SecondBrain</h1>
+            <div class="subtitle">Your knowledge, connected</div>
+        </div>
+        <div class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-label">Main</div>
+                <a class="nav-item" href="01_dashboard.html"><span class="nav-icon">&#9632;</span> Dashboard</a>
+                <a class="nav-item" href="05_notes_list.html"><span class="nav-icon">&#9998;</span> Notes <span class="nav-badge">12</span></a>
+                <a class="nav-item active" href="07_knowledge_graph.html"><span class="nav-icon">&#9672;</span> Knowledge Graph</a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-label">Writing</div>
+                <a class="nav-item" href="06_articles_list.html"><span class="nav-icon">&#9776;</span> Articles <span class="nav-badge">5</span></a>
+                <a class="nav-item" href="#"><span class="nav-icon">&#9788;</span> Published</a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-label">Insights</div>
+                <a class="nav-item" href="#"><span class="nav-icon">&#9636;</span> Analytics</a>
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <span id="theme-icon">&#9790;</span>
+                <span id="theme-label">Light mode</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- WORKSPACE -->
+    <div class="workspace" id="workspace">
+
+        <!-- GRAPH AREA -->
+        <div class="graph-area">
+
+            <!-- Toolbar -->
+            <div class="graph-toolbar">
+                <h2>Knowledge Graph</h2>
+                <div class="toolbar-sep"></div>
+                <input type="text" class="graph-search" placeholder="Find a node..." id="graph-search">
+                <div class="toolbar-sep"></div>
+                <button class="btn btn-concept" onclick="showConceptForm()">+ Concept</button>
+                <button class="btn btn-primary" onclick="showQueryBar()">Ask Knowledge</button>
+                <button class="btn btn-secondary" onclick="showHealthCheck()">Health Check</button>
+                <div class="toolbar-sep"></div>
+                <a class="btn btn-success" href="03_synapse_review.html">Synapse: All</a>
+            </div>
+
+            <!-- Node type filters -->
+            <div class="node-filters">
+                <span class="node-filters-label">Show:</span>
+                <button class="node-filter active" onclick="this.classList.toggle('active')">
+                    <span class="filter-dot" style="background-color:var(--node-concept)"></span>
+                    <span class="filter-label">Concepts</span>
+                    <span class="filter-count">4</span>
+                </button>
+                <button class="node-filter active" onclick="this.classList.toggle('active')">
+                    <span class="filter-dot" style="background-color:var(--node-note)"></span>
+                    <span class="filter-label">Notes</span>
+                    <span class="filter-count">12</span>
+                </button>
+                <button class="node-filter active" onclick="this.classList.toggle('active')">
+                    <span class="filter-dot" style="background-color:var(--node-source)"></span>
+                    <span class="filter-label">Sources</span>
+                    <span class="filter-count">5</span>
+                </button>
+                <button class="node-filter active" onclick="this.classList.toggle('active')">
+                    <span class="filter-dot" style="background-color:var(--node-summary)"></span>
+                    <span class="filter-label">Summaries</span>
+                    <span class="filter-count">8</span>
+                </button>
+                <button class="node-filter active" onclick="this.classList.toggle('active')">
+                    <span class="filter-dot" style="background-color:var(--node-article)"></span>
+                    <span class="filter-label">Articles</span>
+                    <span class="filter-count">5</span>
+                </button>
+
+                <div class="edge-filters">
+                    <label class="edge-filter">
+                        <input type="checkbox" checked> Confirmed
+                    </label>
+                    <label class="edge-filter">
+                        <input type="checkbox" checked> Suggested
+                    </label>
+                </div>
+            </div>
+
+            <!-- Graph Canvas (SVG mock) -->
+            <div class="graph-canvas" id="graph-canvas">
+                <svg class="graph-svg" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Suggested edges (dashed) -->
+                    <line x1="350" y1="120" x2="520" y2="280" stroke="var(--edge-suggested)" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
+                    <line x1="200" y1="300" x2="350" y2="380" stroke="var(--edge-suggested)" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
+
+                    <!-- Confirmed edges (solid) -->
+                    <!-- AI cluster -->
+                    <line x1="320" y1="200" x2="220" y2="160" stroke="var(--edge-confirmed)" stroke-width="1.5" opacity="0.4"/>
+                    <line x1="320" y1="200" x2="350" y2="120" stroke="var(--edge-confirmed)" stroke-width="1.5" opacity="0.4"/>
+                    <line x1="320" y1="200" x2="420" y2="180" stroke="var(--edge-confirmed)" stroke-width="1.5" opacity="0.4"/>
+                    <line x1="320" y1="200" x2="280" y2="280" stroke="var(--edge-confirmed)" stroke-width="1.5" opacity="0.4"/>
+                    <line x1="320" y1="200" x2="200" y2="300" stroke="var(--edge-confirmed)" stroke-width="1.5" opacity="0.4"/>
+
+                    <!-- Attention cluster -->
+                    <line x1="350" y1="120" x2="420" y2="180" stroke="var(--edge-confirmed)" stroke-width="1.5" opacity="0.4"/>
+                    <line x1="350" y1="120" x2="220" y2="160" stroke="var(--edge-confirmed)" stroke-width="1.5" opacity="0.4"/>
+                    <line x1="420" y1="180" x2="280" y2="280" stroke="var(--edge-confirmed)" stroke-width="1.5" opacity="0.4"/>
+
+                    <!-- Source connections -->
+                    <line x1="180" y1="240" x2="220" y2="160" stroke="var(--edge-confirmed)" stroke-width="1" opacity="0.3"/>
+                    <line x1="180" y1="240" x2="350" y2="120" stroke="var(--edge-confirmed)" stroke-width="1" opacity="0.3"/>
+                    <line x1="180" y1="240" x2="280" y2="280" stroke="var(--edge-confirmed)" stroke-width="1" opacity="0.3"/>
+
+                    <!-- Article connections -->
+                    <line x1="460" y1="100" x2="350" y2="120" stroke="var(--edge-confirmed)" stroke-width="1" opacity="0.3"/>
+                    <line x1="460" y1="100" x2="420" y2="180" stroke="var(--edge-confirmed)" stroke-width="1" opacity="0.3"/>
+                    <line x1="460" y1="100" x2="280" y2="280" stroke="var(--edge-confirmed)" stroke-width="1" opacity="0.3"/>
+
+                    <!-- Web Dev cluster -->
+                    <line x1="600" y1="300" x2="580" y2="380" stroke="var(--edge-confirmed)" stroke-width="1.5" opacity="0.4"/>
+                    <line x1="600" y1="300" x2="660" y2="360" stroke="var(--edge-confirmed)" stroke-width="1.5" opacity="0.4"/>
+                    <line x1="580" y1="380" x2="660" y2="360" stroke="var(--edge-confirmed)" stroke-width="1" opacity="0.3"/>
+
+                    <!-- Database cluster -->
+                    <line x1="520" y1="280" x2="580" y2="380" stroke="var(--edge-suggested)" stroke-width="1" stroke-dasharray="4,4" opacity="0.3"/>
+
+                    <!-- Concept: AI (hexagon, large) -->
+                    <polygon points="320,180 340,188 340,212 320,220 300,212 300,188" fill="var(--node-concept)" opacity="0.9" class="graph-node" data-id="concept-ai" onclick="showDetail('concept-ai')" onmouseenter="showTooltip(event,'Concept','AI','4 concepts, 8 notes connected')" onmouseleave="hideTooltip()"/>
+                    <text x="320" y="205" text-anchor="middle" fill="white" font-size="7" font-weight="600">AI</text>
+
+                    <!-- Concept: Attention (hexagon) -->
+                    <polygon points="350,102 366,108 366,132 350,138 334,132 334,108" fill="var(--node-concept)" opacity="0.85" class="graph-node" data-id="concept-attention" onclick="showDetail('concept-attention')" onmouseenter="showTooltip(event,'Concept','Attention Mechanisms','3 notes, 1 article connected')" onmouseleave="hideTooltip()"/>
+                    <text x="350" y="123" text-anchor="middle" fill="white" font-size="6" font-weight="600">Attn</text>
+
+                    <!-- Concept: NLP (hexagon, small) -->
+                    <polygon points="420,165 432,170 432,190 420,195 408,190 408,170" fill="var(--node-concept)" opacity="0.8" class="graph-node" data-id="concept-nlp" onclick="showDetail('concept-nlp')" onmouseenter="showTooltip(event,'Concept','Natural Language Processing','2 notes connected')" onmouseleave="hideTooltip()"/>
+                    <text x="420" y="185" text-anchor="middle" fill="white" font-size="6" font-weight="600">NLP</text>
+
+                    <!-- Concept: Web Dev (hexagon) -->
+                    <polygon points="600,282 616,288 616,312 600,318 584,312 584,288" fill="var(--node-concept)" opacity="0.8" class="graph-node" data-id="concept-webdev" onclick="showDetail('concept-webdev')" onmouseenter="showTooltip(event,'Concept','Web Development','2 notes connected')" onmouseleave="hideTooltip()"/>
+                    <text x="600" y="304" text-anchor="middle" fill="white" font-size="6" font-weight="600">Web</text>
+
+                    <!-- Note: Attention Details (circle) -->
+                    <circle cx="220" cy="160" r="10" fill="var(--node-note)" opacity="0.85" class="graph-node" onclick="showDetail('note-attention')" onmouseenter="showTooltip(event,'Note','Attention mechanism details','89 words · 3 connections')" onmouseleave="hideTooltip()"/>
+
+                    <!-- Note: RNN Limitations (circle) -->
+                    <circle cx="280" cy="280" r="9" fill="var(--node-note)" opacity="0.85" class="graph-node" onclick="showDetail('note-rnn')" onmouseenter="showTooltip(event,'Note','RNN Limitations in Long Sequences','156 words · 2 connections')" onmouseleave="hideTooltip()"/>
+
+                    <!-- Note: BERT (circle) -->
+                    <circle cx="200" cy="300" r="8" fill="var(--node-note)" opacity="0.8" class="graph-node" onmouseenter="showTooltip(event,'Note','BERT Pre-training Strategies','178 words · 2 connections')" onmouseleave="hideTooltip()"/>
+
+                    <!-- Note: HTMX vs React (circle) -->
+                    <circle cx="580" cy="380" r="9" fill="var(--node-note)" opacity="0.85" class="graph-node" onmouseenter="showTooltip(event,'Note','HTMX vs React: Server Patterns','210 words · 2 connections')" onmouseleave="hideTooltip()"/>
+
+                    <!-- Note: DuckDB (circle) -->
+                    <circle cx="520" cy="280" r="7" fill="var(--node-note)" opacity="0.7" class="graph-node" onmouseenter="showTooltip(event,'Note','DuckDB for Analytics Workloads','134 words · 1 connection')" onmouseleave="hideTooltip()"/>
+
+                    <!-- Note: GPU Memory (circle, small, edge) -->
+                    <circle cx="350" cy="380" r="6" fill="var(--node-note)" opacity="0.6" class="graph-node" onmouseenter="showTooltip(event,'Note','GPU Memory Optimization','98 words · 1 connection')" onmouseleave="hideTooltip()"/>
+
+                    <!-- Source: transformer paper (square) -->
+                    <rect x="168" y="228" width="24" height="24" rx="3" fill="var(--node-source)" opacity="0.75" class="graph-node" onmouseenter="showTooltip(event,'Source','transformer-paper.pdf','1,247 words · 4 connections')" onmouseleave="hideTooltip()"/>
+
+                    <!-- Summary: Default (diamond) -->
+                    <polygon points="150,340 160,330 170,340 160,350" fill="var(--node-summary)" opacity="0.7" class="graph-node" onmouseenter="showTooltip(event,'Summary','Default Summary — Transformer','BM25 prompt')" onmouseleave="hideTooltip()"/>
+
+                    <!-- Article: Understanding Attention (rounded rect) -->
+                    <rect x="440" y="86" width="40" height="28" rx="6" fill="var(--node-article)" opacity="0.8" class="graph-node" onmouseenter="showTooltip(event,'Article','Understanding Attention Mechanisms','Draft · 230 words')" onmouseleave="hideTooltip()"/>
+                    <text x="460" y="104" text-anchor="middle" fill="white" font-size="5" font-weight="500">Article</text>
+
+                    <!-- Note: HTMX article-related (circle) -->
+                    <circle cx="660" cy="360" r="8" fill="var(--node-note)" opacity="0.75" class="graph-node" onmouseenter="showTooltip(event,'Note','Server-Side Rendering Patterns','120 words · 1 connection')" onmouseleave="hideTooltip()"/>
+                </svg>
+
+                <!-- Node tooltip -->
+                <div class="node-tooltip" id="node-tooltip">
+                    <div class="tooltip-type" id="tooltip-type">Note</div>
+                    <div class="tooltip-title" id="tooltip-title">Title</div>
+                    <div class="tooltip-meta" id="tooltip-meta">Meta</div>
+                </div>
+
+                <!-- Zoom controls -->
+                <div class="zoom-controls">
+                    <button class="zoom-btn">&#8722;</button>
+                    <span class="zoom-level">100%</span>
+                    <button class="zoom-btn">&#43;</button>
+                    <button class="zoom-btn" title="Fit to screen">&#9634;</button>
+                </div>
+
+                <!-- Graph stats -->
+                <div class="graph-stats">
+                    <span><strong>34</strong> nodes</span>
+                    <span><strong>38</strong> confirmed edges</span>
+                    <span><strong>5</strong> suggested</span>
+                    <span><strong>4</strong> concepts</span>
+                </div>
+
+                <!-- Query bar (hidden by default) -->
+                <div class="query-bar" id="query-bar">
+                    <div class="query-input-row">
+                        <input type="text" class="query-input" placeholder="Ask your knowledge..." value="What do I know about how Transformers handle long sequences?">
+                        <button class="query-send" onclick="showQueryResult()">Ask</button>
+                    </div>
+                    <button class="query-close" onclick="hideQueryBar()">&#10005;</button>
+                    <div class="query-result" id="query-result" style="display:none;">
+                        <div class="query-result-header">Synapse Answer (based on 4 notes, 2 sources)</div>
+                        <p>Based on your notes: Transformers handle long sequences through <strong>self-attention</strong>, which connects any two positions directly regardless of distance (Note: <em>Attention mechanism details</em>). This solved the <strong>vanishing gradient problem</strong> that limited RNNs to short-range dependencies (Note: <em>RNN Limitations</em>).</p>
+                        <p>However, attention scales <strong>quadratically</strong> with sequence length — O(n²) — which becomes a practical bottleneck for very long sequences (Source: <em>transformer-paper.pdf</em>). This is an area you haven't explored deeply yet.</p>
+                        <div class="query-actions">
+                            <button class="btn btn-secondary" onclick="hideQueryBar()">Dismiss</button>
+                            <button class="btn btn-concept" onclick="alert('Would create a concept page from this answer')">Save as Concept</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Overlay for modals -->
+                <div class="overlay" id="overlay" onclick="closeOverlays()"></div>
+
+                <!-- Create Concept form -->
+                <div class="concept-form" id="concept-form">
+                    <h3>Create Concept</h3>
+                    <div class="form-group">
+                        <label class="form-label">Concept Name</label>
+                        <input type="text" class="form-input" placeholder="e.g., Attention Mechanisms">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-textarea" placeholder="What is this concept about? Synapse will use this to find related notes."></textarea>
+                        <div class="form-hint">Synapse will scan all notes and connect related ones to this concept</div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-secondary" onclick="closeOverlays()">Cancel</button>
+                        <button class="btn btn-concept" onclick="alert('Would create concept and run Synapse'); closeOverlays();">Create & Connect</button>
+                    </div>
+                </div>
+
+                <!-- Health Check panel -->
+                <div class="health-panel" id="health-panel">
+                    <div class="health-header">
+                        <h3>Knowledge Health Check</h3>
+                        <button class="detail-close" onclick="closeOverlays()">&#10005;</button>
+                    </div>
+                    <div class="health-body">
+                        <div class="health-group">
+                            <div class="health-group-header">
+                                <span class="health-group-icon" style="color:var(--warning)">&#9888;</span>
+                                2 Contradictions
+                            </div>
+                            <div class="health-item">
+                                <span>"RNN Limitations" says attention was a new idea vs. "BERT notes" references earlier attention work</span>
+                                <button class="health-item-action">Review</button>
+                            </div>
+                            <div class="health-item">
+                                <span>"Transformer Deep Dive" claims O(n) complexity vs. paper source says O(n²)</span>
+                                <button class="health-item-action">Review</button>
+                            </div>
+                        </div>
+                        <div class="health-group">
+                            <div class="health-group-header">
+                                <span class="health-group-icon" style="color:var(--accent)">&#9679;</span>
+                                3 Suggested Concepts
+                            </div>
+                            <div class="health-item">
+                                <span>"Positional Encoding" — mentioned in 3 notes</span>
+                                <button class="health-item-action">Create</button>
+                            </div>
+                            <div class="health-item">
+                                <span>"Layer Normalization" — mentioned in 2 notes</span>
+                                <button class="health-item-action">Create</button>
+                            </div>
+                            <div class="health-item">
+                                <span>"Transfer Learning" — mentioned in 2 notes</span>
+                                <button class="health-item-action">Create</button>
+                            </div>
+                        </div>
+                        <div class="health-group">
+                            <div class="health-group-header">
+                                <span class="health-group-icon" style="color:var(--danger)">&#9675;</span>
+                                2 Orphan Notes
+                            </div>
+                            <div class="health-item">
+                                <span>"GPU Memory Optimization" — no confirmed connections</span>
+                                <button class="health-item-action">Run Synapse</button>
+                            </div>
+                            <div class="health-item">
+                                <span>"DuckDB for Analytics" — only 1 weak connection</span>
+                                <button class="health-item-action">Run Synapse</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="health-footer">
+                        <button class="btn btn-secondary" onclick="closeOverlays()">Close</button>
+                        <button class="btn btn-primary">Fix All Automatically</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- DETAIL PANEL (right side, slides in) -->
+        <div class="detail-panel" id="detail-panel">
+            <!-- Concept detail (shown by default for demo) -->
+            <div class="detail-header">
+                <h3>Node Details</h3>
+                <button class="detail-close" onclick="closeDetail()">&#10005;</button>
+            </div>
+            <div class="detail-body" id="detail-body">
+
+                <!-- Concept page example -->
+                <div id="detail-concept-attention">
+                    <span class="detail-type" style="background-color:var(--node-concept); color:white;">Concept</span>
+                    <div class="detail-title">Attention Mechanisms</div>
+                    <div class="detail-meta">Auto-maintained by Synapse &middot; Last updated Jun 28</div>
+
+                    <div class="detail-section">
+                        <div class="detail-section-label">Synthesized Knowledge</div>
+                        <div class="detail-content">
+                            <p>Self-attention allows models to weigh all positions in a sequence simultaneously, replacing the sequential processing of RNNs. Multi-head attention runs parallel attention operations, each learning different relationship types (syntactic, semantic, positional).</p>
+                            <p>This mechanism is the core of the Transformer architecture and the foundation for BERT and modern NLP models.</p>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <div class="detail-section-label">Key Claims</div>
+                        <div class="detail-content">
+                            <ul>
+                                <li>Attention scales O(n²) with sequence length <span style="font-size:0.6rem;color:var(--text-muted)">— transformer-paper.pdf</span></li>
+                                <li>Multi-head attention captures different relationship types <span style="font-size:0.6rem;color:var(--text-muted)">— Attention mechanism details</span></li>
+                                <li>Self-attention solved the vanishing gradient problem <span style="font-size:0.6rem;color:var(--text-muted)">— RNN Limitations</span></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <div class="detail-section-label">Open Questions</div>
+                        <div class="detail-content">
+                            <ul>
+                                <li>How do efficient attention variants (Flash Attention, linear attention) compare?</li>
+                                <li>What are positional encodings and why are they needed?</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <div class="detail-section-label">Connected Items (6)</div>
+                        <div class="connected-item">
+                            <span class="connected-dot" style="background:var(--node-note)"></span>
+                            <span class="connected-name">Attention mechanism details</span>
+                            <span class="connected-relation">directly about</span>
+                        </div>
+                        <div class="connected-item">
+                            <span class="connected-dot" style="background:var(--node-note)"></span>
+                            <span class="connected-name">RNN Limitations</span>
+                            <span class="connected-relation">problem → solution</span>
+                        </div>
+                        <div class="connected-item">
+                            <span class="connected-dot" style="background:var(--node-note)"></span>
+                            <span class="connected-name">BERT Pre-training</span>
+                            <span class="connected-relation">builds upon</span>
+                        </div>
+                        <div class="connected-item">
+                            <span class="connected-dot" style="background:var(--node-source)"></span>
+                            <span class="connected-name">transformer-paper.pdf</span>
+                            <span class="connected-relation">primary source</span>
+                        </div>
+                        <div class="connected-item">
+                            <span class="connected-dot" style="background:var(--node-summary)"></span>
+                            <span class="connected-name">Default Summary — Transformer</span>
+                            <span class="connected-relation">summary</span>
+                        </div>
+                        <div class="connected-item">
+                            <span class="connected-dot" style="background:var(--node-article)"></span>
+                            <span class="connected-name">Understanding Attention Mechanisms</span>
+                            <span class="connected-relation">referenced in</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <div class="detail-section-label">Tags</div>
+                        <div>
+                            <span class="tag">AI</span>
+                            <span class="tag">Architecture</span>
+                            <span class="tag">NLP</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Note detail example (hidden, shown on click) -->
+                <div id="detail-note-attention" style="display:none;">
+                    <span class="detail-type" style="background-color:var(--node-note); color:white;">Note</span>
+                    <div class="detail-title">Attention mechanism details</div>
+                    <div class="detail-meta">from: transformer-paper.pdf &middot; Jun 27 &middot; 89 words</div>
+
+                    <div class="detail-section">
+                        <div class="detail-section-label">Content</div>
+                        <div class="detail-content">
+                            <p>Multi-head attention runs several attention operations in parallel, each learning different relationship patterns. The key insight is that different heads can attend to different types of relationships in the input sequence.</p>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <div class="detail-section-label">Connected Items (3)</div>
+                        <div class="connected-item">
+                            <span class="connected-dot" style="background:var(--node-concept)"></span>
+                            <span class="connected-name">Attention Mechanisms</span>
+                            <span class="connected-relation">directly about</span>
+                        </div>
+                        <div class="connected-item">
+                            <span class="connected-dot" style="background:var(--node-concept)"></span>
+                            <span class="connected-name">AI</span>
+                            <span class="connected-relation">topic</span>
+                        </div>
+                        <div class="connected-item">
+                            <span class="connected-dot" style="background:var(--node-note)"></span>
+                            <span class="connected-name">RNN Limitations</span>
+                            <span class="connected-relation">problem → solution</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <div class="detail-section-label">Tags</div>
+                        <div>
+                            <span class="tag">AI</span>
+                            <span class="tag">Architecture</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="detail-actions" id="detail-actions">
+                <a class="btn btn-primary" href="02_source_workspace.html">Open</a>
+                <button class="btn btn-secondary" onclick="alert('Run Synapse on this node')">Synapse</button>
+                <button class="btn btn-secondary" onclick="closeDetail()">Close</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        /* Theme */
+        function toggleTheme() {
+            const html = document.documentElement;
+            const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+            html.setAttribute("data-theme", next);
+            localStorage.setItem("theme", next);
+            updateToggleButton(next);
+        }
+        function updateToggleButton(theme) {
+            document.getElementById("theme-icon").textContent = theme === "dark" ? "☾" : "☀";
+            document.getElementById("theme-label").textContent = theme === "dark" ? "Light mode" : "Dark mode";
+        }
+        (function () {
+            const saved = localStorage.getItem("theme") || "dark";
+            document.documentElement.setAttribute("data-theme", saved);
+            updateToggleButton(saved);
+        })();
+
+        /* Tooltip on node hover */
+        function showTooltip(event, type, title, meta) {
+            const tip = document.getElementById("node-tooltip");
+            const colors = {
+                "Note": "var(--node-note)", "Source": "var(--node-source)",
+                "Summary": "var(--node-summary)", "Article": "var(--node-article)",
+                "Concept": "var(--node-concept)"
+            };
+            document.getElementById("tooltip-type").textContent = type;
+            document.getElementById("tooltip-type").style.color = colors[type];
+            document.getElementById("tooltip-title").textContent = title;
+            document.getElementById("tooltip-meta").textContent = meta;
+
+            const canvas = document.getElementById("graph-canvas");
+            const rect = canvas.getBoundingClientRect();
+            tip.style.left = (event.clientX - rect.left + 12) + "px";
+            tip.style.top = (event.clientY - rect.top - 10) + "px";
+            tip.classList.add("visible");
+        }
+
+        function hideTooltip() {
+            document.getElementById("node-tooltip").classList.remove("visible");
+        }
+
+        /* Detail panel */
+        function showDetail(id) {
+            // Hide all detail contents
+            document.querySelectorAll("#detail-body > div").forEach(d => d.style.display = "none");
+
+            // Show the matching one
+            const el = document.getElementById("detail-" + id);
+            if (el) el.style.display = "block";
+
+            // Open panel
+            document.getElementById("detail-panel").classList.add("open");
+        }
+
+        function closeDetail() {
+            document.getElementById("detail-panel").classList.remove("open");
+        }
+
+        /* Query bar */
+        function showQueryBar() {
+            document.getElementById("query-bar").classList.add("visible");
+            document.getElementById("query-result").style.display = "none";
+            document.querySelector(".query-input").focus();
+        }
+
+        function hideQueryBar() {
+            document.getElementById("query-bar").classList.remove("visible");
+        }
+
+        function showQueryResult() {
+            document.getElementById("query-result").style.display = "block";
+        }
+
+        /* Overlays (concept form, health check) */
+        function showConceptForm() {
+            document.getElementById("overlay").classList.add("visible");
+            document.getElementById("concept-form").classList.add("visible");
+        }
+
+        function showHealthCheck() {
+            document.getElementById("overlay").classList.add("visible");
+            document.getElementById("health-panel").classList.add("visible");
+        }
+
+        function closeOverlays() {
+            document.getElementById("overlay").classList.remove("visible");
+            document.getElementById("concept-form").classList.remove("visible");
+            document.getElementById("health-panel").classList.remove("visible");
+        }
+
+        /* Make SVG nodes look clickable */
+        document.querySelectorAll(".graph-node").forEach(node => {
+            node.style.cursor = "pointer";
+        });
+    </script>
+
+</body>
+</html>

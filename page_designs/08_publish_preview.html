@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecondBrain — Publish Preview</title>
+    <style>
+        :root { --sidebar-width: 240px; --transition-speed: 0.2s; }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-card: #1e2a45;
+            --bg-sidebar: #0f1629;
+            --bg-input: #151d30;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6a6a7a;
+            --accent: #4fc3f7;
+            --accent-hover: #81d4fa;
+            --border: #2a2a4a;
+            --success: #66bb6a;
+            --warning: #ffa726;
+            --danger: #ef5350;
+            --tag-bg: #2a3a5a;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f5f5f5;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --bg-sidebar: #f0f0f0;
+            --bg-input: #f8f8fc;
+            --text-primary: #1a1a2e;
+            --text-secondary: #555568;
+            --text-muted: #888898;
+            --accent: #1976d2;
+            --accent-hover: #1565c0;
+            --border: #dcdce0;
+            --success: #388e3c;
+            --warning: #f57c00;
+            --danger: #d32f2f;
+            --tag-bg: #e3edf7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            min-height: 100vh;
+            transition: background-color var(--transition-speed), color var(--transition-speed);
+        }
+
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { color: var(--accent-hover); }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: var(--sidebar-width); background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border); display: flex; flex-direction: column;
+            position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+        }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
+        .sidebar-header h1 { font-size: 1.25rem; font-weight: 700; color: var(--accent); }
+        .sidebar-header .subtitle { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+        .sidebar-nav { flex: 1; padding: 12px 0; }
+        .nav-section { padding: 0 12px; margin-bottom: 8px; }
+        .nav-section-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); padding: 8px 12px 4px; }
+        .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 6px; color: var(--text-secondary); font-size: 0.875rem; cursor: pointer; transition: all 0.15s; }
+        .nav-item:hover { background-color: var(--bg-card); color: var(--text-primary); }
+        .nav-item.active { background-color: var(--bg-card); color: var(--accent); font-weight: 500; }
+        .nav-icon { width: 18px; text-align: center; font-size: 1rem; }
+        .nav-badge { margin-left: auto; background-color: var(--accent); color: var(--bg-primary); font-size: 0.7rem; padding: 1px 6px; border-radius: 10px; font-weight: 600; }
+        .sidebar-footer { padding: 12px; border-top: 1px solid var(--border); }
+        .theme-toggle { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; background: none; border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; font-size: 0.8rem; width: 100%; transition: all 0.15s; }
+        .theme-toggle:hover { background-color: var(--bg-card); color: var(--text-primary); }
+
+        /* MAIN */
+        .main {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* LEFT: Article preview */
+        .preview-panel {
+            flex: 1;
+            overflow-y: auto;
+            background-color: var(--bg-secondary);
+        }
+
+        .preview-header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 24px;
+            border-bottom: 1px solid var(--border);
+            background-color: var(--bg-card);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .preview-header-bar .breadcrumb {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .preview-header-bar .breadcrumb a { color: var(--text-muted); }
+        .preview-header-bar .breadcrumb a:hover { color: var(--accent); }
+
+        .preview-label {
+            font-size: 0.7rem;
+            padding: 3px 10px;
+            background-color: var(--warning);
+            color: white;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        /* Article preview content */
+        .preview-content {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 48px 32px;
+        }
+
+        .preview-content h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 8px;
+        }
+
+        .preview-content .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .preview-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            padding-bottom: 24px;
+            margin-bottom: 32px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .preview-author {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background-color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        .preview-body {
+            font-size: 1rem;
+            line-height: 1.9;
+            color: var(--text-secondary);
+        }
+
+        .preview-body h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 32px 0 12px;
+        }
+
+        .preview-body p { margin-bottom: 16px; }
+
+        .preview-body ul {
+            padding-left: 24px;
+            margin-bottom: 16px;
+        }
+
+        .preview-body li {
+            margin-bottom: 6px;
+        }
+
+        .preview-body strong { color: var(--text-primary); }
+
+        .ref-link {
+            font-size: 0.75rem;
+            padding: 1px 6px;
+            background-color: var(--tag-bg);
+            border-radius: 3px;
+            color: var(--accent);
+            cursor: pointer;
+        }
+
+        .preview-references {
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .preview-references h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-muted);
+        }
+
+        .ref-list-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 0;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .ref-num {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            min-width: 16px;
+        }
+
+        /* RIGHT: Settings panel */
+        .settings-panel {
+            width: 320px;
+            border-left: 1px solid var(--border);
+            background-color: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .settings-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .settings-header h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .settings-body {
+            padding: 16px 20px;
+            flex: 1;
+        }
+
+        .setting-group {
+            margin-bottom: 20px;
+        }
+
+        .setting-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .setting-input, .setting-textarea, .setting-select {
+            width: 100%;
+            padding: 8px 12px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            font-family: inherit;
+        }
+
+        .setting-input:focus, .setting-textarea:focus, .setting-select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .setting-textarea { resize: vertical; min-height: 60px; line-height: 1.5; }
+
+        .setting-hint {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .slug-preview {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            word-break: break-all;
+        }
+
+        .slug-preview span { color: var(--accent); }
+
+        /* Tags input */
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            padding: 6px 8px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            min-height: 36px;
+            align-items: center;
+        }
+
+        .tags-container:focus-within { border-color: var(--accent); }
+
+        .tag {
+            font-size: 0.6rem; padding: 2px 8px; border-radius: 3px;
+            background-color: var(--tag-bg); color: var(--accent);
+            display: flex; align-items: center; gap: 4px;
+        }
+
+        .tag button {
+            background: none; border: none; color: var(--text-muted);
+            cursor: pointer; font-size: 0.7rem;
+        }
+
+        .tag-input {
+            border: none; background: none; outline: none;
+            color: var(--text-primary); font-size: 0.75rem;
+            min-width: 60px; flex: 1;
+        }
+
+        /* Cover image upload */
+        .cover-upload {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.15s;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .cover-upload:hover { border-color: var(--accent); color: var(--text-secondary); }
+
+        .cover-upload-icon { font-size: 1.5rem; margin-bottom: 4px; }
+
+        /* Checklist */
+        .checklist { list-style: none; }
+
+        .checklist li {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 0;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .check-icon { font-size: 0.9rem; width: 18px; text-align: center; }
+        .check-pass { color: var(--success); }
+        .check-fail { color: var(--danger); }
+        .check-warn { color: var(--warning); }
+
+        /* Settings footer */
+        .settings-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 10px 20px; border-radius: 6px; font-size: 0.8rem;
+            font-weight: 500; cursor: pointer; transition: all 0.15s;
+            border: none; text-align: center; width: 100%;
+        }
+        .btn-primary { background-color: var(--accent); color: white; }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-secondary { background-color: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border); }
+        .btn-secondary:hover { color: var(--text-primary); border-color: var(--text-muted); }
+        .btn-success { background-color: var(--success); color: white; font-size: 0.9rem; padding: 12px 20px; }
+        .btn-success:hover { filter: brightness(1.1); }
+
+        .publish-warning {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        /* Schedule option */
+        .schedule-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .schedule-row .setting-input { flex: 1; }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h1>SecondBrain</h1>
+            <div class="subtitle">Your knowledge, connected</div>
+        </div>
+        <div class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-label">Main</div>
+                <a class="nav-item" href="01_dashboard.html"><span class="nav-icon">&#9632;</span> Dashboard</a>
+                <a class="nav-item" href="05_notes_list.html"><span class="nav-icon">&#9998;</span> Notes <span class="nav-badge">12</span></a>
+                <a class="nav-item" href="07_knowledge_graph.html"><span class="nav-icon">&#9672;</span> Knowledge Graph</a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-label">Writing</div>
+                <a class="nav-item active" href="06_articles_list.html"><span class="nav-icon">&#9776;</span> Articles <span class="nav-badge">5</span></a>
+                <a class="nav-item" href="#"><span class="nav-icon">&#9788;</span> Published</a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-label">Insights</div>
+                <a class="nav-item" href="#"><span class="nav-icon">&#9636;</span> Analytics</a>
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <span id="theme-icon">&#9790;</span>
+                <span id="theme-label">Light mode</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- MAIN: Two panels -->
+    <div class="main">
+
+        <!-- LEFT: Article preview -->
+        <div class="preview-panel">
+            <div class="preview-header-bar">
+                <div class="breadcrumb">
+                    <a href="06_articles_list.html">Articles</a> /
+                    <a href="04_article_workspace.html">Understanding Attention Mechanisms</a> /
+                    Publish
+                </div>
+                <span class="preview-label">Preview</span>
+            </div>
+
+            <div class="preview-content">
+                <h1>Understanding Attention Mechanisms in Modern AI</h1>
+                <p class="subtitle">How self-attention replaced recurrence and changed NLP forever</p>
+
+                <div class="preview-meta">
+                    <div class="preview-author">
+                        <div class="avatar">U</div>
+                        <span>Your Name</span>
+                    </div>
+                    <span>Jun 28, 2026</span>
+                    <span>4 min read</span>
+                    <span>980 words</span>
+                </div>
+
+                <div class="preview-body">
+                    <h2>Introduction</h2>
+                    <p>Imagine trying to understand a paragraph by reading one word at a time, never looking back. That's essentially how early neural networks processed language — and it was a fundamental bottleneck. The Transformer architecture changed everything by introducing a simple but powerful idea: let the model look at all words simultaneously.</p>
+                    <p>Before Transformers, recurrent neural networks (RNNs) were the dominant approach for handling sequential data like text. But RNNs had a critical limitation: they processed tokens one at a time, making it difficult to capture relationships between distant parts of a sequence. <span class="ref-link">[1]</span></p>
+
+                    <h2>The Self-Attention Breakthrough</h2>
+                    <p>The key innovation was the <strong>self-attention mechanism</strong>. Rather than processing a sequence step by step, self-attention allows the model to look at all positions simultaneously and compute how much each position should "attend to" every other position. <span class="ref-link">[2]</span></p>
+                    <p>This approach has several concrete advantages:</p>
+                    <ul>
+                        <li><strong>Parallelization</strong> — all positions can be processed simultaneously on a GPU</li>
+                        <li><strong>Long-range dependencies</strong> — any two positions are directly connected, regardless of distance</li>
+                        <li><strong>Interpretability</strong> — attention weights reveal which parts of the input the model focuses on</li>
+                    </ul>
+
+                    <h2>Multi-Head Attention</h2>
+                    <p>The Transformer doesn't rely on a single attention function — it uses multiple "heads" running in parallel, each learning to focus on different types of relationships. Research has shown that different heads naturally specialize: some track syntactic patterns, others capture coreference, and others focus on semantic similarity.</p>
+
+                    <h2>Conclusion</h2>
+                    <p>The attention mechanism didn't just improve on RNNs — it made their core limitation irrelevant. Where RNNs struggled with vanishing gradients across long sequences, self-attention connects any two positions directly. This shift from sequential to parallel processing wasn't merely an optimization; it was a conceptual breakthrough that enabled everything from BERT to GPT. <span class="ref-link">[1]</span></p>
+                </div>
+
+                <div class="preview-references">
+                    <h3>References</h3>
+                    <div class="ref-list-item">
+                        <span class="ref-num">[1]</span>
+                        <span>RNN Limitations in Long Sequences — personal note</span>
+                    </div>
+                    <div class="ref-list-item">
+                        <span class="ref-num">[2]</span>
+                        <span>Transformer Architecture Deep Dive — from transformer-paper.pdf</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Publish settings -->
+        <div class="settings-panel">
+            <div class="settings-header">
+                <h3>Publish Settings</h3>
+            </div>
+
+            <div class="settings-body">
+                <!-- URL slug -->
+                <div class="setting-group">
+                    <label class="setting-label">URL Slug</label>
+                    <input type="text" class="setting-input" value="understanding-attention-mechanisms" oninput="updateSlug(this.value)">
+                    <div class="slug-preview" id="slug-preview">
+                        yoursite.com/p/<span>understanding-attention-mechanisms</span>
+                    </div>
+                </div>
+
+                <!-- Excerpt -->
+                <div class="setting-group">
+                    <label class="setting-label">Excerpt</label>
+                    <textarea class="setting-textarea">How self-attention replaced recurrence and changed NLP forever. A deep dive into the mechanism at the heart of modern AI.</textarea>
+                    <div class="setting-hint">Shown in search results and social media previews</div>
+                </div>
+
+                <!-- Tags -->
+                <div class="setting-group">
+                    <label class="setting-label">Tags</label>
+                    <div class="tags-container">
+                        <span class="tag">AI <button>&#10005;</button></span>
+                        <span class="tag">NLP <button>&#10005;</button></span>
+                        <span class="tag">Architecture <button>&#10005;</button></span>
+                        <input type="text" class="tag-input" placeholder="Add tag...">
+                    </div>
+                </div>
+
+                <!-- Cover image -->
+                <div class="setting-group">
+                    <label class="setting-label">Cover Image (optional)</label>
+                    <div class="cover-upload">
+                        <div class="cover-upload-icon">&#128247;</div>
+                        Upload or drop image
+                    </div>
+                </div>
+
+                <!-- Visibility -->
+                <div class="setting-group">
+                    <label class="setting-label">Visibility</label>
+                    <select class="setting-select">
+                        <option value="public">Public — anyone can read</option>
+                        <option value="unlisted">Unlisted — only with link</option>
+                    </select>
+                </div>
+
+                <!-- Publish checklist -->
+                <div class="setting-group">
+                    <label class="setting-label">Pre-publish Checklist</label>
+                    <ul class="checklist">
+                        <li>
+                            <span class="check-icon check-pass">&#10003;</span>
+                            All 4 sections written
+                        </li>
+                        <li>
+                            <span class="check-icon check-pass">&#10003;</span>
+                            Muse review completed
+                        </li>
+                        <li>
+                            <span class="check-icon check-pass">&#10003;</span>
+                            2 references cited
+                        </li>
+                        <li>
+                            <span class="check-icon check-pass">&#10003;</span>
+                            Slug set
+                        </li>
+                        <li>
+                            <span class="check-icon check-pass">&#10003;</span>
+                            Excerpt written
+                        </li>
+                        <li>
+                            <span class="check-icon check-warn">&#9679;</span>
+                            Cover image — optional
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Schedule -->
+                <div class="setting-group">
+                    <label class="setting-label">Schedule (optional)</label>
+                    <div class="schedule-row">
+                        <input type="datetime-local" class="setting-input" value="">
+                        <span style="font-size:0.7rem; color:var(--text-muted); white-space:nowrap;">or publish now</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-footer">
+                <button class="btn btn-success" onclick="alert('Article published! Redirecting to public page...')">
+                    Publish Now
+                </button>
+                <button class="btn btn-secondary" onclick="alert('Scheduled for later')">
+                    Schedule
+                </button>
+                <button class="btn btn-secondary" onclick="toggleExportPreview()">
+                    &#8615; Export / Cross-post
+                </button>
+                <div id="export-options" style="display:none; margin-top:4px;">
+                    <div style="font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:6px;">Download</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px;">
+                        <button class="btn btn-secondary" style="width:auto; padding:4px 12px; font-size:0.7rem;" onclick="alert('Markdown')">Markdown</button>
+                        <button class="btn btn-secondary" style="width:auto; padding:4px 12px; font-size:0.7rem;" onclick="alert('PDF')">PDF</button>
+                        <button class="btn btn-secondary" style="width:auto; padding:4px 12px; font-size:0.7rem;" onclick="alert('HTML')">HTML</button>
+                        <button class="btn btn-secondary" style="width:auto; padding:4px 12px; font-size:0.7rem;" onclick="alert('DOCX')">DOCX</button>
+                    </div>
+                    <div style="font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:6px;">Copy for platform</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:4px;">
+                        <button class="btn btn-secondary" style="width:auto; padding:4px 12px; font-size:0.7rem;" onclick="alert('Copied for Medium')">Medium</button>
+                        <button class="btn btn-secondary" style="width:auto; padding:4px 12px; font-size:0.7rem;" onclick="alert('Copied for Dev.to')">Dev.to</button>
+                        <button class="btn btn-secondary" style="width:auto; padding:4px 12px; font-size:0.7rem;" onclick="alert('Copied for LinkedIn')">LinkedIn</button>
+                        <button class="btn btn-secondary" style="width:auto; padding:4px 12px; font-size:0.7rem;" onclick="alert('Copied for WordPress')">WordPress</button>
+                    </div>
+                </div>
+                <a class="btn btn-secondary" href="04_article_workspace.html" style="display:block;">
+                    &#8592; Back to Editor
+                </a>
+                <div class="publish-warning">
+                    Publishing makes this article publicly accessible
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+            html.setAttribute("data-theme", next);
+            localStorage.setItem("theme", next);
+            updateToggleButton(next);
+        }
+        function updateToggleButton(theme) {
+            document.getElementById("theme-icon").textContent = theme === "dark" ? "☾" : "☀";
+            document.getElementById("theme-label").textContent = theme === "dark" ? "Light mode" : "Dark mode";
+        }
+        (function () {
+            const saved = localStorage.getItem("theme") || "dark";
+            document.documentElement.setAttribute("data-theme", saved);
+            updateToggleButton(saved);
+        })();
+
+        function toggleExportPreview() {
+            const el = document.getElementById("export-options");
+            el.style.display = el.style.display === "none" ? "block" : "none";
+        }
+
+        function updateSlug(val) {
+            document.querySelector("#slug-preview span").textContent = val;
+        }
+    </script>
+
+</body>
+</html>

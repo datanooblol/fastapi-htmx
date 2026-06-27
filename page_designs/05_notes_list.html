@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecondBrain — Notes</title>
+    <style>
+        :root { --sidebar-width: 240px; --transition-speed: 0.2s; }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-card: #1e2a45;
+            --bg-sidebar: #0f1629;
+            --bg-input: #151d30;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6a6a7a;
+            --accent: #4fc3f7;
+            --accent-hover: #81d4fa;
+            --border: #2a2a4a;
+            --success: #66bb6a;
+            --warning: #ffa726;
+            --danger: #ef5350;
+            --tag-bg: #2a3a5a;
+            --highlight: #4a3a1a;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f5f5f5;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --bg-sidebar: #f0f0f0;
+            --bg-input: #f8f8fc;
+            --text-primary: #1a1a2e;
+            --text-secondary: #555568;
+            --text-muted: #888898;
+            --accent: #1976d2;
+            --accent-hover: #1565c0;
+            --border: #dcdce0;
+            --success: #388e3c;
+            --warning: #f57c00;
+            --danger: #d32f2f;
+            --tag-bg: #e3edf7;
+            --highlight: #fff3cd;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            min-height: 100vh;
+            transition: background-color var(--transition-speed), color var(--transition-speed);
+        }
+
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { color: var(--accent-hover); }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: var(--sidebar-width); background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border); display: flex; flex-direction: column;
+            position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+        }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
+        .sidebar-header h1 { font-size: 1.25rem; font-weight: 700; color: var(--accent); }
+        .sidebar-header .subtitle { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+        .sidebar-nav { flex: 1; padding: 12px 0; }
+        .nav-section { padding: 0 12px; margin-bottom: 8px; }
+        .nav-section-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); padding: 8px 12px 4px; }
+        .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 6px; color: var(--text-secondary); font-size: 0.875rem; cursor: pointer; transition: all 0.15s; }
+        .nav-item:hover { background-color: var(--bg-card); color: var(--text-primary); }
+        .nav-item.active { background-color: var(--bg-card); color: var(--accent); font-weight: 500; }
+        .nav-icon { width: 18px; text-align: center; font-size: 1rem; }
+        .nav-badge { margin-left: auto; background-color: var(--accent); color: var(--bg-primary); font-size: 0.7rem; padding: 1px 6px; border-radius: 10px; font-weight: 600; }
+        .sidebar-footer { padding: 12px; border-top: 1px solid var(--border); }
+        .theme-toggle { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; background: none; border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; font-size: 0.8rem; width: 100%; transition: all 0.15s; }
+        .theme-toggle:hover { background-color: var(--bg-card); color: var(--text-primary); }
+
+        /* MAIN */
+        .main {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 32px;
+            max-width: 960px;
+        }
+
+        /* HEADER with inline stats */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .page-header-left h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .header-stats strong {
+            color: var(--text-secondary);
+        }
+
+        .btn {
+            padding: 8px 20px; border-radius: 6px; font-size: 0.8rem;
+            font-weight: 500; cursor: pointer; transition: all 0.15s; border: none;
+        }
+        .btn-primary { background-color: var(--accent); color: white; }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-secondary { background-color: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border); }
+        .btn-secondary:hover { color: var(--text-primary); border-color: var(--text-muted); }
+        .btn-danger-ghost { background: none; border: 1px solid var(--border); color: var(--text-muted); }
+        .btn-danger-ghost:hover { color: var(--danger); border-color: var(--danger); }
+
+        /* SEARCH BAR — clean, one line */
+        .search-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .search-input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 14px 10px 36px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-family: inherit;
+        }
+
+        .search-input:focus { outline: none; border-color: var(--accent); }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .search-btn {
+            padding: 10px 20px;
+            background-color: var(--accent);
+            border: none; border-radius: 8px;
+            color: white; font-size: 0.8rem; font-weight: 500;
+            cursor: pointer; transition: all 0.15s;
+        }
+
+        .search-btn:hover { background-color: var(--accent-hover); }
+
+        /* FILTERS ROW — compact */
+        .filters-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
+            padding: 5px 10px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            color: var(--text-primary);
+            font-size: 0.75rem;
+            font-family: inherit;
+        }
+
+        .filter-select:focus { outline: none; border-color: var(--accent); }
+
+        .filter-sep {
+            width: 1px; height: 20px;
+            background-color: var(--border);
+        }
+
+        /* Search options toggle */
+        .search-options-toggle {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 4px 0;
+            transition: color 0.15s;
+        }
+
+        .search-options-toggle:hover { color: var(--accent); }
+
+        .search-options {
+            display: none;
+            padding: 12px 16px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .search-options.visible { display: block; }
+
+        .search-options-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .search-modes {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-mode-chip {
+            display: flex; align-items: center; gap: 5px;
+            padding: 4px 12px; border-radius: 14px;
+            font-size: 0.7rem; cursor: pointer;
+            transition: all 0.15s; user-select: none;
+        }
+
+        .search-mode-chip.always-on {
+            background-color: var(--accent); color: white; cursor: default;
+        }
+
+        .search-mode-chip.toggle {
+            background-color: var(--bg-input); border: 1px solid var(--border); color: var(--text-muted);
+        }
+
+        .search-mode-chip.toggle:hover { border-color: var(--accent); color: var(--text-secondary); }
+
+        .search-mode-chip.toggle.active {
+            background-color: var(--tag-bg); border-color: var(--accent); color: var(--accent);
+        }
+
+        .search-mode-chip input[type="checkbox"] {
+            accent-color: var(--accent); width: 12px; height: 12px;
+        }
+
+        .search-mode-hint {
+            font-size: 0.6rem; color: var(--text-muted);
+        }
+
+        /* BULK BAR */
+        .bulk-bar {
+            display: none; align-items: center; gap: 12px;
+            padding: 10px 16px; background-color: var(--tag-bg);
+            border: 1px solid var(--accent); border-radius: 8px;
+            margin-bottom: 12px; font-size: 0.8rem;
+        }
+        .bulk-bar.visible { display: flex; }
+        .bulk-count { font-weight: 600; color: var(--accent); }
+        .bulk-actions { display: flex; gap: 6px; margin-left: auto; }
+
+        /* RESULTS HEADER */
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .results-count { font-size: 0.8rem; color: var(--text-muted); }
+        .results-count strong { color: var(--text-primary); }
+
+        .view-toggle { display: flex; gap: 0; }
+
+        .view-btn {
+            padding: 5px 10px; background: none; border: 1px solid var(--border);
+            color: var(--text-muted); cursor: pointer; font-size: 0.75rem; transition: all 0.15s;
+        }
+        .view-btn:first-child { border-radius: 4px 0 0 4px; }
+        .view-btn:last-child { border-radius: 0 4px 4px 0; border-left: none; }
+        .view-btn.active { background-color: var(--accent); border-color: var(--accent); color: white; }
+
+        /* RESULT ITEMS */
+        .results-list { display: flex; flex-direction: column; gap: 6px; }
+
+        .result-item {
+            display: flex; gap: 12px; padding: 12px 14px;
+            background-color: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 8px; cursor: pointer; transition: all 0.15s;
+            align-items: flex-start;
+        }
+        .result-item:hover { border-color: var(--accent); }
+        .result-item.selected { border-color: var(--accent); background-color: var(--tag-bg); }
+
+        .result-checkbox { margin-top: 3px; accent-color: var(--accent); flex-shrink: 0; }
+
+        .result-body { flex: 1; min-width: 0; }
+
+        .result-top {
+            display: flex; align-items: center; gap: 8px; margin-bottom: 3px;
+        }
+
+        .result-type-badge {
+            font-size: 0.55rem; font-weight: 600; padding: 2px 7px;
+            border-radius: 3px; text-transform: uppercase; flex-shrink: 0;
+        }
+        .type-note { background-color: var(--tag-bg); color: var(--accent); }
+        .type-source { background-color: var(--tag-bg); color: var(--success); }
+        .type-summary { background-color: var(--tag-bg); color: var(--warning); }
+
+        .result-title {
+            font-size: 0.85rem; font-weight: 600;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .result-meta-line {
+            font-size: 0.7rem; color: var(--text-muted); margin-bottom: 4px;
+        }
+
+        .result-meta-line a { color: var(--text-muted); }
+        .result-meta-line a:hover { color: var(--accent); }
+
+        .result-preview {
+            font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;
+            display: -webkit-box; -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical; overflow: hidden;
+        }
+
+        .result-preview mark {
+            background-color: var(--highlight); color: var(--text-primary);
+            padding: 0 2px; border-radius: 2px;
+        }
+
+        .result-footer {
+            display: flex; align-items: center; gap: 8px;
+            margin-top: 6px; flex-wrap: wrap;
+        }
+
+        .tag {
+            font-size: 0.6rem; padding: 1px 6px; border-radius: 3px;
+            background-color: var(--tag-bg); color: var(--accent);
+        }
+
+        .result-footer-right {
+            display: flex; align-items: center; gap: 8px;
+            margin-left: auto;
+        }
+
+        /* Match indicators — only visible when search options are active */
+        .match-indicators {
+            display: flex; gap: 3px; align-items: center;
+        }
+
+        .match-badge {
+            font-size: 0.5rem; font-weight: 700; padding: 1px 5px;
+            border-radius: 2px; text-transform: uppercase;
+        }
+        .match-badge.hit { background-color: var(--success); color: white; }
+        .match-badge.miss { background-color: var(--bg-input); color: var(--text-muted); border: 1px solid var(--border); }
+
+        .confidence-pct {
+            font-size: 0.6rem; color: var(--text-muted); font-weight: 500;
+        }
+
+        /* Hover actions */
+        .result-actions {
+            display: flex; flex-direction: column; gap: 3px;
+            flex-shrink: 0; opacity: 0; transition: opacity 0.15s;
+        }
+        .result-item:hover .result-actions { opacity: 1; }
+
+        .result-action-btn {
+            padding: 3px 10px; font-size: 0.65rem; background: none;
+            border: 1px solid var(--border); border-radius: 4px;
+            color: var(--text-muted); cursor: pointer; transition: all 0.15s;
+            white-space: nowrap; text-align: center;
+        }
+        .result-action-btn:hover { color: var(--accent); border-color: var(--accent); }
+        .result-action-btn.danger:hover { color: var(--danger); border-color: var(--danger); }
+
+        /* CARD VIEW */
+        .results-grid {
+            display: none;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 10px;
+        }
+        .results-grid.active { display: grid; }
+        .results-list.hidden { display: none; }
+
+        .result-card {
+            padding: 14px; background-color: var(--bg-card);
+            border: 1px solid var(--border); border-radius: 10px;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .result-card:hover { border-color: var(--accent); }
+        .result-card .result-top { margin-bottom: 6px; }
+        .result-card .result-title { font-size: 0.85rem; white-space: normal; margin-bottom: 2px; }
+        .result-card .result-meta-line { margin-bottom: 6px; }
+        .result-card .result-preview { -webkit-line-clamp: 3; margin-bottom: 8px; }
+        .result-card .result-footer { padding-top: 8px; border-top: 1px solid var(--border); }
+
+        /* PAGINATION */
+        .pagination {
+            display: flex; justify-content: center; align-items: center;
+            gap: 4px; margin-top: 24px;
+        }
+        .page-btn {
+            padding: 6px 12px; background: none; border: 1px solid var(--border);
+            border-radius: 5px; color: var(--text-secondary); cursor: pointer;
+            font-size: 0.8rem; transition: all 0.15s;
+        }
+        .page-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .page-btn.active { background-color: var(--accent); border-color: var(--accent); color: white; }
+        .page-btn.disabled { color: var(--text-muted); cursor: default; opacity: 0.5; }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h1>SecondBrain</h1>
+            <div class="subtitle">Your knowledge, connected</div>
+        </div>
+        <div class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-label">Main</div>
+                <a class="nav-item" href="01_dashboard.html"><span class="nav-icon">&#9632;</span> Dashboard</a>
+                <a class="nav-item active" href="05_notes_list.html"><span class="nav-icon">&#9998;</span> Notes <span class="nav-badge">12</span></a>
+                <a class="nav-item" href="#"><span class="nav-icon">&#9672;</span> Knowledge Graph</a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-label">Writing</div>
+                <a class="nav-item" href="04_article_workspace.html"><span class="nav-icon">&#9776;</span> Articles <span class="nav-badge">3</span></a>
+                <a class="nav-item" href="#"><span class="nav-icon">&#9788;</span> Published</a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-label">Insights</div>
+                <a class="nav-item" href="#"><span class="nav-icon">&#9636;</span> Analytics</a>
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <span id="theme-icon">&#9790;</span>
+                <span id="theme-label">Light mode</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <!-- Header with inline stats -->
+        <div class="page-header">
+            <div class="page-header-left">
+                <h2>Notes & Sources</h2>
+                <div class="header-stats">
+                    <span><strong>12</strong> notes</span>
+                    <span><strong>5</strong> sources</span>
+                    <span><strong>8</strong> summaries</span>
+                    <span><strong>28</strong> connections</span>
+                </div>
+            </div>
+            <a class="btn btn-primary" href="02_source_workspace.html">+ New Source</a>
+        </div>
+
+        <!-- Search bar — one clean line -->
+        <div class="search-bar">
+            <div class="search-input-wrapper">
+                <span class="search-icon">&#8981;</span>
+                <input type="text" class="search-input" id="search-input"
+                       placeholder="Search notes, sources, summaries..."
+                       value="attention mechanism">
+            </div>
+            <button class="search-btn" onclick="performSearch()">Search</button>
+        </div>
+
+        <!-- Filters + search options toggle -->
+        <div class="filters-row">
+            <select class="filter-select" id="filter-type">
+                <option value="all">All Types</option>
+                <option value="note">Notes</option>
+                <option value="source">Sources</option>
+                <option value="summary">Summaries</option>
+            </select>
+            <select class="filter-select" id="filter-tag">
+                <option value="all">All Tags</option>
+                <option value="AI">AI</option>
+                <option value="Architecture">Architecture</option>
+                <option value="Web Dev">Web Dev</option>
+                <option value="Database">Database</option>
+                <option value="RNN">RNN</option>
+                <option value="NLP">NLP</option>
+            </select>
+            <select class="filter-select" id="filter-sort">
+                <option value="relevance">Sort: Relevance</option>
+                <option value="newest">Sort: Newest</option>
+                <option value="oldest">Sort: Oldest</option>
+                <option value="alpha">Sort: A → Z</option>
+                <option value="connections">Sort: Most Connected</option>
+            </select>
+            <div class="filter-sep"></div>
+            <button class="search-options-toggle" onclick="toggleSearchOptions()">
+                &#9881; Search options
+            </button>
+        </div>
+
+        <!-- Search options (hidden by default) -->
+        <div class="search-options" id="search-options">
+            <div class="search-options-label">Enable additional search methods for better results:</div>
+            <div class="search-modes">
+                <span class="search-mode-chip always-on">&#10003; Keyword</span>
+                <label class="search-mode-chip toggle" id="mode-fts">
+                    <input type="checkbox" onchange="toggleSearchMode('fts')"> Full-text
+                    <span class="search-mode-hint">— ranked by relevance</span>
+                </label>
+                <label class="search-mode-chip toggle" id="mode-vector">
+                    <input type="checkbox" onchange="toggleSearchMode('vector')"> Semantic
+                    <span class="search-mode-hint">— finds related concepts</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Bulk bar -->
+        <div class="bulk-bar" id="bulk-bar">
+            <span class="bulk-count" id="bulk-count">2 selected</span>
+            <div class="bulk-actions">
+                <button class="btn btn-secondary" style="font-size:0.75rem; padding:5px 14px;">Connect with Synapse</button>
+                <button class="btn btn-danger-ghost" style="font-size:0.75rem; padding:5px 14px;">Delete</button>
+                <button class="btn btn-secondary" style="font-size:0.75rem; padding:5px 14px;" onclick="clearSelection()">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Results header -->
+        <div class="results-header">
+            <div class="results-count">
+                <label style="cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                    <input type="checkbox" id="select-all" style="accent-color:var(--accent);" onchange="toggleSelectAll(this.checked)">
+                </label>
+                <strong>5</strong> results for "attention mechanism"
+            </div>
+            <div class="view-toggle">
+                <button class="view-btn active" onclick="switchView('list')">List</button>
+                <button class="view-btn" onclick="switchView('card')">Cards</button>
+            </div>
+        </div>
+
+        <!-- Results: List View -->
+        <div class="results-list" id="results-list">
+
+            <!-- Result 1 -->
+            <div class="result-item" onclick="toggleSelect(this)">
+                <input type="checkbox" class="result-checkbox" onclick="event.stopPropagation(); toggleSelect(this.closest('.result-item'))">
+                <div class="result-body">
+                    <div class="result-top">
+                        <span class="result-type-badge type-note">Note</span>
+                        <span class="result-title">Attention mechanism details</span>
+                    </div>
+                    <div class="result-meta-line">
+                        from: <a href="#" onclick="event.stopPropagation();">transformer-paper.pdf</a> &middot; Jun 27 &middot; 89 words &middot; 3 connections
+                    </div>
+                    <div class="result-preview">
+                        Multi-head <mark>attention</mark> runs several <mark>attention</mark> operations in parallel, each learning different relationship patterns. The key insight is that different heads can attend to different types of relationships.
+                    </div>
+                    <div class="result-footer">
+                        <span class="tag">AI</span>
+                        <span class="tag">Architecture</span>
+                        <div class="result-footer-right">
+                            <div class="match-indicators hybrid-only" style="display:none;">
+                                <span class="match-badge hit">K</span>
+                                <span class="match-badge hit">FTS</span>
+                                <span class="match-badge miss">VEC</span>
+                                <span class="confidence-pct">92%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="result-actions">
+                    <a class="result-action-btn" href="02_source_workspace.html" onclick="event.stopPropagation();">Open</a>
+                    <button class="result-action-btn" onclick="event.stopPropagation();">Synapse</button>
+                    <button class="result-action-btn danger" onclick="event.stopPropagation();">Delete</button>
+                </div>
+            </div>
+
+            <!-- Result 2 -->
+            <div class="result-item" onclick="toggleSelect(this)">
+                <input type="checkbox" class="result-checkbox" onclick="event.stopPropagation(); toggleSelect(this.closest('.result-item'))">
+                <div class="result-body">
+                    <div class="result-top">
+                        <span class="result-type-badge type-source">Source</span>
+                        <span class="result-title">Transformer Architecture Deep Dive</span>
+                    </div>
+                    <div class="result-meta-line">
+                        PDF upload &middot; Jun 27 &middot; 1,247 words &middot; 4 connections
+                    </div>
+                    <div class="result-preview">
+                        The Transformer model architecture uses self-<mark>attention</mark> <mark>mechanism</mark>s, dispensing with recurrence and convolutions entirely. The key innovation allows the model to weigh the importance of different parts.
+                    </div>
+                    <div class="result-footer">
+                        <span class="tag">AI</span>
+                        <span class="tag">Research</span>
+                        <div class="result-footer-right">
+                            <div class="match-indicators hybrid-only" style="display:none;">
+                                <span class="match-badge hit">K</span>
+                                <span class="match-badge hit">FTS</span>
+                                <span class="match-badge miss">VEC</span>
+                                <span class="confidence-pct">85%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="result-actions">
+                    <a class="result-action-btn" href="02_source_workspace.html" onclick="event.stopPropagation();">Open</a>
+                    <button class="result-action-btn" onclick="event.stopPropagation();">Synapse</button>
+                    <button class="result-action-btn danger" onclick="event.stopPropagation();">Delete</button>
+                </div>
+            </div>
+
+            <!-- Result 3 -->
+            <div class="result-item" onclick="toggleSelect(this)">
+                <input type="checkbox" class="result-checkbox" onclick="event.stopPropagation(); toggleSelect(this.closest('.result-item'))">
+                <div class="result-body">
+                    <div class="result-top">
+                        <span class="result-type-badge type-summary">Summary</span>
+                        <span class="result-title">Default Summary — Transformer Paper</span>
+                    </div>
+                    <div class="result-meta-line">
+                        from: <a href="#" onclick="event.stopPropagation();">transformer-paper.pdf</a> &middot; Jun 27 &middot; Default prompt
+                    </div>
+                    <div class="result-preview">
+                        The Transformer architecture replaced RNN/CNN-based models with a pure <mark>attention</mark> <mark>mechanism</mark>, enabling better capture of long-range dependencies in sequences.
+                    </div>
+                    <div class="result-footer">
+                        <span class="tag">AI</span>
+                        <div class="result-footer-right">
+                            <div class="match-indicators hybrid-only" style="display:none;">
+                                <span class="match-badge hit">K</span>
+                                <span class="match-badge hit">FTS</span>
+                                <span class="match-badge miss">VEC</span>
+                                <span class="confidence-pct">72%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="result-actions">
+                    <a class="result-action-btn" href="02_source_workspace.html" onclick="event.stopPropagation();">Open</a>
+                    <button class="result-action-btn danger" onclick="event.stopPropagation();">Delete</button>
+                </div>
+            </div>
+
+            <!-- Result 4 -->
+            <div class="result-item" onclick="toggleSelect(this)">
+                <input type="checkbox" class="result-checkbox" onclick="event.stopPropagation(); toggleSelect(this.closest('.result-item'))">
+                <div class="result-body">
+                    <div class="result-top">
+                        <span class="result-type-badge type-note">Note</span>
+                        <span class="result-title">BERT Pre-training Strategies</span>
+                    </div>
+                    <div class="result-meta-line">
+                        standalone &middot; Jun 23 &middot; 178 words &middot; 2 connections
+                    </div>
+                    <div class="result-preview">
+                        BERT uses masked language modeling and next sentence prediction. It builds on the Transformer encoder's multi-head <mark>attention</mark> to learn bidirectional representations.
+                    </div>
+                    <div class="result-footer">
+                        <span class="tag">AI</span>
+                        <span class="tag">NLP</span>
+                        <div class="result-footer-right">
+                            <div class="match-indicators hybrid-only" style="display:none;">
+                                <span class="match-badge miss">K</span>
+                                <span class="match-badge hit">FTS</span>
+                                <span class="match-badge miss">VEC</span>
+                                <span class="confidence-pct">58%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="result-actions">
+                    <a class="result-action-btn" href="02_source_workspace.html" onclick="event.stopPropagation();">Open</a>
+                    <button class="result-action-btn" onclick="event.stopPropagation();">Synapse</button>
+                    <button class="result-action-btn danger" onclick="event.stopPropagation();">Delete</button>
+                </div>
+            </div>
+
+            <!-- Result 5 -->
+            <div class="result-item" onclick="toggleSelect(this)">
+                <input type="checkbox" class="result-checkbox" onclick="event.stopPropagation(); toggleSelect(this.closest('.result-item'))">
+                <div class="result-body">
+                    <div class="result-top">
+                        <span class="result-type-badge type-note">Note</span>
+                        <span class="result-title">RNN Limitations in Long Sequences</span>
+                    </div>
+                    <div class="result-meta-line">
+                        standalone &middot; Jun 25 &middot; 156 words &middot; 2 connections
+                    </div>
+                    <div class="result-preview">
+                        Recurrent networks struggle with vanishing gradients when sequences grow long. The <mark>attention</mark> approach later solved this by allowing direct connections between any two positions.
+                    </div>
+                    <div class="result-footer">
+                        <span class="tag">AI</span>
+                        <span class="tag">RNN</span>
+                        <div class="result-footer-right">
+                            <div class="match-indicators hybrid-only" style="display:none;">
+                                <span class="match-badge hit">K</span>
+                                <span class="match-badge miss">FTS</span>
+                                <span class="match-badge miss">VEC</span>
+                                <span class="confidence-pct">32%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="result-actions">
+                    <a class="result-action-btn" href="02_source_workspace.html" onclick="event.stopPropagation();">Open</a>
+                    <button class="result-action-btn" onclick="event.stopPropagation();">Synapse</button>
+                    <button class="result-action-btn danger" onclick="event.stopPropagation();">Delete</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card View -->
+        <div class="results-grid" id="results-grid">
+            <div class="result-card">
+                <div class="result-top"><span class="result-type-badge type-note">Note</span></div>
+                <div class="result-title">Attention mechanism details</div>
+                <div class="result-meta-line">from: transformer-paper.pdf &middot; Jun 27 &middot; 3 connections</div>
+                <div class="result-preview">Multi-head <mark>attention</mark> runs several operations in parallel, each learning different relationship patterns.</div>
+                <div class="result-footer">
+                    <span class="tag">AI</span>
+                    <span class="tag">Architecture</span>
+                    <span style="margin-left:auto; font-size:0.65rem; color:var(--text-muted);">89 words</span>
+                </div>
+            </div>
+            <div class="result-card">
+                <div class="result-top"><span class="result-type-badge type-source">Source</span></div>
+                <div class="result-title">Transformer Architecture Deep Dive</div>
+                <div class="result-meta-line">PDF upload &middot; Jun 27 &middot; 4 connections</div>
+                <div class="result-preview">The Transformer uses self-<mark>attention</mark>, dispensing with recurrence and convolutions entirely.</div>
+                <div class="result-footer">
+                    <span class="tag">AI</span>
+                    <span class="tag">Research</span>
+                    <span style="margin-left:auto; font-size:0.65rem; color:var(--text-muted);">1,247 words</span>
+                </div>
+            </div>
+            <div class="result-card">
+                <div class="result-top"><span class="result-type-badge type-note">Note</span></div>
+                <div class="result-title">BERT Pre-training Strategies</div>
+                <div class="result-meta-line">standalone &middot; Jun 23 &middot; 2 connections</div>
+                <div class="result-preview">BERT builds on the Transformer encoder's multi-head <mark>attention</mark> to learn bidirectional representations.</div>
+                <div class="result-footer">
+                    <span class="tag">AI</span>
+                    <span class="tag">NLP</span>
+                    <span style="margin-left:auto; font-size:0.65rem; color:var(--text-muted);">178 words</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination">
+            <button class="page-btn disabled">&#8592; Prev</button>
+            <button class="page-btn active">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">3</button>
+            <button class="page-btn">Next &#8594;</button>
+        </div>
+
+    </main>
+
+    <script>
+        /* Theme */
+        function toggleTheme() {
+            const html = document.documentElement;
+            const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+            html.setAttribute("data-theme", next);
+            localStorage.setItem("theme", next);
+            updateToggleButton(next);
+        }
+        function updateToggleButton(theme) {
+            document.getElementById("theme-icon").textContent = theme === "dark" ? "☾" : "☀";
+            document.getElementById("theme-label").textContent = theme === "dark" ? "Light mode" : "Dark mode";
+        }
+        (function () {
+            const saved = localStorage.getItem("theme") || "dark";
+            document.documentElement.setAttribute("data-theme", saved);
+            updateToggleButton(saved);
+        })();
+
+        /* Search options toggle */
+        function toggleSearchOptions() {
+            const opts = document.getElementById("search-options");
+            opts.classList.toggle("visible");
+        }
+
+        /* Search mode toggle — show/hide match indicators when 2+ modes active */
+        function toggleSearchMode(mode) {
+            const chip = document.getElementById("mode-" + mode);
+            const cb = chip.querySelector("input");
+            chip.classList.toggle("active", cb.checked);
+            updateMatchIndicators();
+        }
+
+        function updateMatchIndicators() {
+            const ftsOn = document.getElementById("mode-fts").classList.contains("active");
+            const vecOn = document.getElementById("mode-vector").classList.contains("active");
+            const show = ftsOn || vecOn;
+
+            document.querySelectorAll(".hybrid-only").forEach(el => {
+                el.style.display = show ? "flex" : "none";
+            });
+        }
+
+        function performSearch() {
+            alert("Search: q=" + document.getElementById("search-input").value);
+        }
+
+        /* View toggle */
+        function switchView(view) {
+            document.querySelectorAll(".view-btn").forEach(b => b.classList.remove("active"));
+            event.target.classList.add("active");
+            const list = document.getElementById("results-list");
+            const grid = document.getElementById("results-grid");
+            if (view === "list") { list.classList.remove("hidden"); grid.classList.remove("active"); }
+            else { list.classList.add("hidden"); grid.classList.add("active"); }
+        }
+
+        /* Selection */
+        function toggleSelect(item) {
+            item.classList.toggle("selected");
+            const cb = item.querySelector(".result-checkbox");
+            if (cb) cb.checked = item.classList.contains("selected");
+            updateBulkBar();
+        }
+
+        function updateBulkBar() {
+            const count = document.querySelectorAll(".result-item.selected").length;
+            const bar = document.getElementById("bulk-bar");
+            if (count > 0) {
+                bar.classList.add("visible");
+                document.getElementById("bulk-count").textContent = count + " selected";
+            } else {
+                bar.classList.remove("visible");
+            }
+        }
+
+        function clearSelection() {
+            document.querySelectorAll(".result-item.selected").forEach(item => {
+                item.classList.remove("selected");
+                const cb = item.querySelector(".result-checkbox");
+                if (cb) cb.checked = false;
+            });
+            document.getElementById("select-all").checked = false;
+            updateBulkBar();
+        }
+
+        function toggleSelectAll(checked) {
+            document.querySelectorAll(".result-item").forEach(item => {
+                item.classList.toggle("selected", checked);
+                const cb = item.querySelector(".result-checkbox");
+                if (cb) cb.checked = checked;
+            });
+            updateBulkBar();
+        }
+    </script>
+
+</body>
+</html>

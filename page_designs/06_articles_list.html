@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecondBrain — Articles</title>
+    <style>
+        :root { --sidebar-width: 240px; --transition-speed: 0.2s; }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-card: #1e2a45;
+            --bg-sidebar: #0f1629;
+            --bg-input: #151d30;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6a6a7a;
+            --accent: #4fc3f7;
+            --accent-hover: #81d4fa;
+            --border: #2a2a4a;
+            --success: #66bb6a;
+            --warning: #ffa726;
+            --danger: #ef5350;
+            --tag-bg: #2a3a5a;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f5f5f5;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --bg-sidebar: #f0f0f0;
+            --bg-input: #f8f8fc;
+            --text-primary: #1a1a2e;
+            --text-secondary: #555568;
+            --text-muted: #888898;
+            --accent: #1976d2;
+            --accent-hover: #1565c0;
+            --border: #dcdce0;
+            --success: #388e3c;
+            --warning: #f57c00;
+            --danger: #d32f2f;
+            --tag-bg: #e3edf7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            min-height: 100vh;
+            transition: background-color var(--transition-speed), color var(--transition-speed);
+        }
+
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { color: var(--accent-hover); }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: var(--sidebar-width); background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border); display: flex; flex-direction: column;
+            position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+        }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
+        .sidebar-header h1 { font-size: 1.25rem; font-weight: 700; color: var(--accent); }
+        .sidebar-header .subtitle { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+        .sidebar-nav { flex: 1; padding: 12px 0; }
+        .nav-section { padding: 0 12px; margin-bottom: 8px; }
+        .nav-section-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); padding: 8px 12px 4px; }
+        .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 6px; color: var(--text-secondary); font-size: 0.875rem; cursor: pointer; transition: all 0.15s; }
+        .nav-item:hover { background-color: var(--bg-card); color: var(--text-primary); }
+        .nav-item.active { background-color: var(--bg-card); color: var(--accent); font-weight: 500; }
+        .nav-icon { width: 18px; text-align: center; font-size: 1rem; }
+        .nav-badge { margin-left: auto; background-color: var(--accent); color: var(--bg-primary); font-size: 0.7rem; padding: 1px 6px; border-radius: 10px; font-weight: 600; }
+        .sidebar-footer { padding: 12px; border-top: 1px solid var(--border); }
+        .theme-toggle { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; background: none; border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; font-size: 0.8rem; width: 100%; transition: all 0.15s; }
+        .theme-toggle:hover { background-color: var(--bg-card); color: var(--text-primary); }
+
+        /* MAIN */
+        .main {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 32px;
+            max-width: 960px;
+        }
+
+        /* HEADER */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .page-header-left h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
+
+        .header-stats {
+            display: flex; gap: 16px;
+            font-size: 0.75rem; color: var(--text-muted);
+        }
+        .header-stats strong { color: var(--text-secondary); }
+
+        .btn {
+            padding: 8px 20px; border-radius: 6px; font-size: 0.8rem;
+            font-weight: 500; cursor: pointer; transition: all 0.15s; border: none;
+        }
+        .btn-primary { background-color: var(--accent); color: white; }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-secondary { background-color: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border); }
+        .btn-secondary:hover { color: var(--text-primary); border-color: var(--text-muted); }
+        .btn-danger-ghost { background: none; border: 1px solid var(--border); color: var(--text-muted); }
+        .btn-danger-ghost:hover { color: var(--danger); border-color: var(--danger); }
+
+        /* FILTER TABS */
+        .filter-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 16px;
+        }
+
+        .filter-tab {
+            padding: 8px 20px;
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .filter-tab:first-child { border-radius: 6px 0 0 6px; }
+        .filter-tab:last-child { border-radius: 0 6px 6px 0; }
+        .filter-tab:not(:first-child) { border-left: none; }
+
+        .filter-tab.active {
+            background-color: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .filter-tab-count {
+            font-size: 0.65rem;
+            padding: 0 5px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .filter-tab.active .filter-tab-count {
+            background-color: rgba(255,255,255,0.2);
+        }
+
+        .filter-tab:not(.active) .filter-tab-count {
+            background-color: var(--tag-bg);
+            color: var(--text-muted);
+        }
+
+        /* SEARCH + SORT ROW */
+        .controls-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            align-items: center;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 8px 14px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            font-family: inherit;
+        }
+
+        .search-input:focus { outline: none; border-color: var(--accent); }
+
+        .sort-select {
+            padding: 8px 12px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.75rem;
+            font-family: inherit;
+        }
+
+        .sort-select:focus { outline: none; border-color: var(--accent); }
+
+        /* BULK BAR */
+        .bulk-bar {
+            display: none; align-items: center; gap: 12px;
+            padding: 10px 16px; background-color: var(--tag-bg);
+            border: 1px solid var(--accent); border-radius: 8px;
+            margin-bottom: 12px; font-size: 0.8rem;
+        }
+        .bulk-bar.visible { display: flex; }
+        .bulk-count { font-weight: 600; color: var(--accent); }
+        .bulk-actions { display: flex; gap: 6px; margin-left: auto; }
+
+        /* ARTICLE CARDS */
+        .articles-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .article-card {
+            display: flex;
+            gap: 16px;
+            padding: 16px 18px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.15s;
+            align-items: flex-start;
+        }
+
+        .article-card:hover { border-color: var(--accent); }
+
+        .article-card.selected {
+            border-color: var(--accent);
+            background-color: var(--tag-bg);
+        }
+
+        .article-checkbox {
+            margin-top: 4px;
+            accent-color: var(--accent);
+            flex-shrink: 0;
+        }
+
+        .article-body { flex: 1; min-width: 0; }
+
+        .article-top {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .article-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        /* Status badges */
+        .status-badge {
+            font-size: 0.6rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            flex-shrink: 0;
+        }
+
+        .status-outline {
+            background-color: var(--bg-input);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+
+        .status-draft {
+            background-color: var(--tag-bg);
+            color: var(--warning);
+        }
+
+        .status-review {
+            background-color: var(--tag-bg);
+            color: var(--accent);
+        }
+
+        .status-published {
+            background-color: var(--tag-bg);
+            color: var(--success);
+        }
+
+        .article-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .article-meta {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* Progress bar for sections */
+        .article-progress {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 4px;
+            background-color: var(--bg-input);
+            border-radius: 2px;
+            overflow: hidden;
+            max-width: 160px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.3s;
+        }
+
+        .progress-fill.low { background-color: var(--warning); }
+        .progress-fill.mid { background-color: var(--accent); }
+        .progress-fill.full { background-color: var(--success); }
+
+        .progress-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        /* Section status mini pills */
+        .section-pills {
+            display: flex;
+            gap: 3px;
+        }
+
+        .section-pill {
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+        }
+
+        .section-pill.outline { background-color: var(--text-muted); opacity: 0.3; }
+        .section-pill.writing { background-color: var(--accent); }
+        .section-pill.ai-draft { background-color: var(--warning); }
+        .section-pill.written { background-color: var(--success); }
+
+        .article-footer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            font-size: 0.6rem; padding: 1px 6px; border-radius: 3px;
+            background-color: var(--tag-bg); color: var(--accent);
+        }
+
+        .article-footer-right {
+            display: flex; gap: 8px; align-items: center; margin-left: auto;
+        }
+
+        .article-stat {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        /* Hover actions */
+        .article-actions {
+            display: flex; flex-direction: column; gap: 4px;
+            flex-shrink: 0; opacity: 0; transition: opacity 0.15s;
+        }
+
+        .article-card:hover .article-actions { opacity: 1; }
+
+        .article-action-btn {
+            padding: 4px 12px; font-size: 0.65rem; background: none;
+            border: 1px solid var(--border); border-radius: 4px;
+            color: var(--text-muted); cursor: pointer; transition: all 0.15s;
+            white-space: nowrap; text-align: center;
+        }
+        .article-action-btn:hover { color: var(--accent); border-color: var(--accent); }
+        .article-action-btn.danger:hover { color: var(--danger); border-color: var(--danger); }
+
+        /* Published article stats */
+        .pub-stats {
+            display: flex;
+            gap: 12px;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .pub-stat { display: flex; align-items: center; gap: 3px; }
+
+        .pub-stat-value {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        /* EMPTY STATE */
+        .empty-state {
+            text-align: center;
+            padding: 60px 24px;
+            color: var(--text-muted);
+        }
+        .empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
+        .empty-state p { font-size: 0.85rem; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h1>SecondBrain</h1>
+            <div class="subtitle">Your knowledge, connected</div>
+        </div>
+        <div class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-label">Main</div>
+                <a class="nav-item" href="01_dashboard.html"><span class="nav-icon">&#9632;</span> Dashboard</a>
+                <a class="nav-item" href="05_notes_list.html"><span class="nav-icon">&#9998;</span> Notes <span class="nav-badge">12</span></a>
+                <a class="nav-item" href="#"><span class="nav-icon">&#9672;</span> Knowledge Graph</a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-label">Writing</div>
+                <a class="nav-item active" href="06_articles_list.html"><span class="nav-icon">&#9776;</span> Articles <span class="nav-badge">5</span></a>
+                <a class="nav-item" href="#"><span class="nav-icon">&#9788;</span> Published</a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-label">Insights</div>
+                <a class="nav-item" href="#"><span class="nav-icon">&#9636;</span> Analytics</a>
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <span id="theme-icon">&#9790;</span>
+                <span id="theme-label">Light mode</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <!-- Header -->
+        <div class="page-header">
+            <div class="page-header-left">
+                <h2>Articles</h2>
+                <div class="header-stats">
+                    <span><strong>5</strong> total</span>
+                    <span><strong>2</strong> drafts</span>
+                    <span><strong>1</strong> in review</span>
+                    <span><strong>2</strong> published</span>
+                </div>
+            </div>
+            <a class="btn btn-primary" href="04_article_workspace.html">+ New Article</a>
+        </div>
+
+        <!-- Status filter tabs -->
+        <div class="filter-tabs">
+            <button class="filter-tab active" onclick="switchFilter('all', this)">
+                All <span class="filter-tab-count">5</span>
+            </button>
+            <button class="filter-tab" onclick="switchFilter('outline', this)">
+                Outline <span class="filter-tab-count">1</span>
+            </button>
+            <button class="filter-tab" onclick="switchFilter('draft', this)">
+                Drafts <span class="filter-tab-count">1</span>
+            </button>
+            <button class="filter-tab" onclick="switchFilter('review', this)">
+                In Review <span class="filter-tab-count">1</span>
+            </button>
+            <button class="filter-tab" onclick="switchFilter('published', this)">
+                Published <span class="filter-tab-count">2</span>
+            </button>
+        </div>
+
+        <!-- Search + Sort -->
+        <div class="controls-row">
+            <input type="text" class="search-input" placeholder="Search articles...">
+            <select class="sort-select">
+                <option>Sort: Last edited</option>
+                <option>Sort: Newest</option>
+                <option>Sort: Oldest</option>
+                <option>Sort: A → Z</option>
+                <option>Sort: Most viewed</option>
+            </select>
+            <label style="font-size:0.75rem; color:var(--text-muted); display:flex; align-items:center; gap:4px; cursor:pointer;">
+                <input type="checkbox" id="select-all" style="accent-color:var(--accent);" onchange="toggleSelectAll(this.checked)">
+                Select all
+            </label>
+        </div>
+
+        <!-- Bulk bar -->
+        <div class="bulk-bar" id="bulk-bar">
+            <span class="bulk-count" id="bulk-count">0 selected</span>
+            <div class="bulk-actions">
+                <button class="btn btn-danger-ghost" style="font-size:0.75rem; padding:5px 14px;">Delete</button>
+                <button class="btn btn-secondary" style="font-size:0.75rem; padding:5px 14px;" onclick="clearSelection()">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Articles List -->
+        <div class="articles-list" id="articles-list">
+
+            <!-- Article 1: Outline stage -->
+            <div class="article-card" data-status="outline" onclick="toggleSelect(this)">
+                <input type="checkbox" class="article-checkbox" onclick="event.stopPropagation(); toggleSelect(this.closest('.article-card'))">
+                <div class="article-body">
+                    <div class="article-top">
+                        <span class="article-title">The Rise of Embedding Models</span>
+                        <span class="status-badge status-outline">Outline</span>
+                    </div>
+                    <div class="article-subtitle">How vector representations changed search and retrieval</div>
+                    <div class="article-meta">
+                        <span>Created Jun 28</span>
+                        <span>Last edited 2 hours ago</span>
+                        <span>5 sections</span>
+                        <span>0 words</span>
+                    </div>
+                    <div class="article-progress">
+                        <div class="section-pills">
+                            <span class="section-pill outline"></span>
+                            <span class="section-pill outline"></span>
+                            <span class="section-pill outline"></span>
+                            <span class="section-pill outline"></span>
+                            <span class="section-pill outline"></span>
+                        </div>
+                        <span class="progress-label">0 / 5 sections written</span>
+                    </div>
+                    <div class="article-footer">
+                        <span class="tag">AI</span>
+                        <span class="tag">Embeddings</span>
+                        <div class="article-footer-right">
+                            <span class="article-stat">4 refs attached</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="article-actions">
+                    <a class="article-action-btn" href="04_article_workspace.html" onclick="event.stopPropagation();">Edit</a>
+                    <button class="article-action-btn danger" onclick="event.stopPropagation();">Delete</button>
+                </div>
+            </div>
+
+            <!-- Article 2: Draft (partially written) -->
+            <div class="article-card" data-status="draft" onclick="toggleSelect(this)">
+                <input type="checkbox" class="article-checkbox" onclick="event.stopPropagation(); toggleSelect(this.closest('.article-card'))">
+                <div class="article-body">
+                    <div class="article-top">
+                        <span class="article-title">Understanding Attention Mechanisms in Modern AI</span>
+                        <span class="status-badge status-draft">Draft</span>
+                    </div>
+                    <div class="article-subtitle">How self-attention replaced recurrence and changed NLP forever</div>
+                    <div class="article-meta">
+                        <span>Created Jun 25</span>
+                        <span>Last edited 1 hour ago</span>
+                        <span>4 sections</span>
+                        <span>~230 words</span>
+                    </div>
+                    <div class="article-progress">
+                        <div class="section-pills">
+                            <span class="section-pill written" title="Introduction"></span>
+                            <span class="section-pill ai-draft" title="Self-Attention"></span>
+                            <span class="section-pill outline" title="Multi-Head"></span>
+                            <span class="section-pill outline" title="Conclusion"></span>
+                        </div>
+                        <div class="progress-bar"><div class="progress-fill mid" style="width:38%"></div></div>
+                        <span class="progress-label">1 written, 1 AI draft, 2 outline</span>
+                    </div>
+                    <div class="article-footer">
+                        <span class="tag">AI</span>
+                        <span class="tag">Architecture</span>
+                        <span class="tag">NLP</span>
+                        <div class="article-footer-right">
+                            <span class="article-stat">6 refs</span>
+                            <span class="article-stat">3 connections</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="article-actions">
+                    <a class="article-action-btn" href="04_article_workspace.html" onclick="event.stopPropagation();">Edit</a>
+                    <button class="article-action-btn danger" onclick="event.stopPropagation();">Delete</button>
+                </div>
+            </div>
+
+            <!-- Article 3: In Review (Muse reviewing) -->
+            <div class="article-card" data-status="review" onclick="toggleSelect(this)">
+                <input type="checkbox" class="article-checkbox" onclick="event.stopPropagation(); toggleSelect(this.closest('.article-card'))">
+                <div class="article-body">
+                    <div class="article-top">
+                        <span class="article-title">Why HTMX Changes Everything</span>
+                        <span class="status-badge status-review">In Review</span>
+                    </div>
+                    <div class="article-subtitle">Server-rendered HTML is making a comeback</div>
+                    <div class="article-meta">
+                        <span>Created Jun 20</span>
+                        <span>Last edited yesterday</span>
+                        <span>5 sections</span>
+                        <span>1,420 words</span>
+                    </div>
+                    <div class="article-progress">
+                        <div class="section-pills">
+                            <span class="section-pill written"></span>
+                            <span class="section-pill written"></span>
+                            <span class="section-pill written"></span>
+                            <span class="section-pill written"></span>
+                            <span class="section-pill written"></span>
+                        </div>
+                        <div class="progress-bar"><div class="progress-fill full" style="width:100%"></div></div>
+                        <span class="progress-label">5 / 5 sections written &middot; Muse reviewing</span>
+                    </div>
+                    <div class="article-footer">
+                        <span class="tag">Web Dev</span>
+                        <span class="tag">HTMX</span>
+                        <div class="article-footer-right">
+                            <span class="article-stat">5 refs</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="article-actions">
+                    <a class="article-action-btn" href="04_article_workspace.html" onclick="event.stopPropagation();">Edit</a>
+                    <button class="article-action-btn" onclick="event.stopPropagation();">Publish</button>
+                    <button class="article-action-btn danger" onclick="event.stopPropagation();">Delete</button>
+                </div>
+            </div>
+
+            <!-- Article 4: Published -->
+            <div class="article-card" data-status="published" onclick="toggleSelect(this)">
+                <input type="checkbox" class="article-checkbox" onclick="event.stopPropagation(); toggleSelect(this.closest('.article-card'))">
+                <div class="article-body">
+                    <div class="article-top">
+                        <span class="article-title">Getting Started with DuckDB</span>
+                        <span class="status-badge status-published">Published</span>
+                    </div>
+                    <div class="article-subtitle">A lightweight analytical database for modern data workflows</div>
+                    <div class="article-meta">
+                        <span>Published Jun 20</span>
+                        <span>3 sections</span>
+                        <span>980 words &middot; 4 min read</span>
+                    </div>
+                    <div class="article-footer">
+                        <span class="tag">Database</span>
+                        <span class="tag">DuckDB</span>
+                        <div class="article-footer-right">
+                            <div class="pub-stats">
+                                <span class="pub-stat"><span class="pub-stat-value">142</span> views</span>
+                                <span class="pub-stat"><span class="pub-stat-value">18</span> likes</span>
+                                <span class="pub-stat"><span class="pub-stat-value">5</span> shares</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="article-actions">
+                    <a class="article-action-btn" href="04_article_workspace.html" onclick="event.stopPropagation();">Edit</a>
+                    <a class="article-action-btn" href="#" onclick="event.stopPropagation();">View</a>
+                    <button class="article-action-btn" onclick="event.stopPropagation();">Unpublish</button>
+                </div>
+            </div>
+
+            <!-- Article 5: Published (older) -->
+            <div class="article-card" data-status="published" onclick="toggleSelect(this)">
+                <input type="checkbox" class="article-checkbox" onclick="event.stopPropagation(); toggleSelect(this.closest('.article-card'))">
+                <div class="article-body">
+                    <div class="article-top">
+                        <span class="article-title">Python Type Hints: A Practical Guide</span>
+                        <span class="status-badge status-published">Published</span>
+                    </div>
+                    <div class="article-subtitle">How to use type hints to write better Python code</div>
+                    <div class="article-meta">
+                        <span>Published Jun 12</span>
+                        <span>4 sections</span>
+                        <span>1,250 words &middot; 5 min read</span>
+                    </div>
+                    <div class="article-footer">
+                        <span class="tag">Python</span>
+                        <span class="tag">Best Practices</span>
+                        <div class="article-footer-right">
+                            <div class="pub-stats">
+                                <span class="pub-stat"><span class="pub-stat-value">89</span> views</span>
+                                <span class="pub-stat"><span class="pub-stat-value">12</span> likes</span>
+                                <span class="pub-stat"><span class="pub-stat-value">3</span> shares</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="article-actions">
+                    <a class="article-action-btn" href="04_article_workspace.html" onclick="event.stopPropagation();">Edit</a>
+                    <a class="article-action-btn" href="#" onclick="event.stopPropagation();">View</a>
+                    <button class="article-action-btn" onclick="event.stopPropagation();">Unpublish</button>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script>
+        /* Theme */
+        function toggleTheme() {
+            const html = document.documentElement;
+            const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+            html.setAttribute("data-theme", next);
+            localStorage.setItem("theme", next);
+            updateToggleButton(next);
+        }
+        function updateToggleButton(theme) {
+            document.getElementById("theme-icon").textContent = theme === "dark" ? "☾" : "☀";
+            document.getElementById("theme-label").textContent = theme === "dark" ? "Light mode" : "Dark mode";
+        }
+        (function () {
+            const saved = localStorage.getItem("theme") || "dark";
+            document.documentElement.setAttribute("data-theme", saved);
+            updateToggleButton(saved);
+        })();
+
+        /* Filter tabs */
+        function switchFilter(status, btn) {
+            document.querySelectorAll(".filter-tab").forEach(t => t.classList.remove("active"));
+            btn.classList.add("active");
+
+            document.querySelectorAll(".article-card").forEach(card => {
+                if (status === "all") {
+                    card.style.display = "flex";
+                } else {
+                    card.style.display = card.dataset.status === status ? "flex" : "none";
+                }
+            });
+        }
+
+        /* Selection */
+        function toggleSelect(item) {
+            item.classList.toggle("selected");
+            const cb = item.querySelector(".article-checkbox");
+            if (cb) cb.checked = item.classList.contains("selected");
+            updateBulkBar();
+        }
+
+        function toggleSelectAll(checked) {
+            document.querySelectorAll(".article-card").forEach(card => {
+                if (card.style.display !== "none") {
+                    card.classList.toggle("selected", checked);
+                    const cb = card.querySelector(".article-checkbox");
+                    if (cb) cb.checked = checked;
+                }
+            });
+            updateBulkBar();
+        }
+
+        function updateBulkBar() {
+            const count = document.querySelectorAll(".article-card.selected").length;
+            const bar = document.getElementById("bulk-bar");
+            if (count > 0) {
+                bar.classList.add("visible");
+                document.getElementById("bulk-count").textContent = count + " selected";
+            } else {
+                bar.classList.remove("visible");
+            }
+        }
+
+        function clearSelection() {
+            document.querySelectorAll(".article-card.selected").forEach(card => {
+                card.classList.remove("selected");
+                const cb = card.querySelector(".article-checkbox");
+                if (cb) cb.checked = false;
+            });
+            document.getElementById("select-all").checked = false;
+            updateBulkBar();
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecondBrain — Dashboard</title>
+    <style>
+        /* ========================================
+           CSS VARIABLES (Theme System)
+           ======================================== */
+        :root {
+            --sidebar-width: 240px;
+            --transition-speed: 0.2s;
+        }
+
+        /* Dark theme (default) */
+        [data-theme="dark"] {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-card: #1e2a45;
+            --bg-sidebar: #0f1629;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6a6a7a;
+            --accent: #4fc3f7;
+            --accent-hover: #81d4fa;
+            --border: #2a2a4a;
+            --success: #66bb6a;
+            --warning: #ffa726;
+            --danger: #ef5350;
+            --tag-bg: #2a3a5a;
+        }
+
+        /* Light theme */
+        [data-theme="light"] {
+            --bg-primary: #f5f5f5;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --bg-sidebar: #f0f0f0;
+            --text-primary: #1a1a2e;
+            --text-secondary: #555568;
+            --text-muted: #888898;
+            --accent: #1976d2;
+            --accent-hover: #1565c0;
+            --border: #dcdce0;
+            --success: #388e3c;
+            --warning: #f57c00;
+            --danger: #d32f2f;
+            --tag-bg: #e3edf7;
+        }
+
+        /* ========================================
+           RESET & BASE
+           ======================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            min-height: 100vh;
+            transition: background-color var(--transition-speed),
+                        color var(--transition-speed);
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        a:hover {
+            color: var(--accent-hover);
+        }
+
+        /* ========================================
+           SIDEBAR
+           ======================================== */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 100;
+            transition: background-color var(--transition-speed);
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .sidebar-header .subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 12px 0;
+        }
+
+        .nav-section {
+            padding: 0 12px;
+            margin-bottom: 8px;
+        }
+
+        .nav-section-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            padding: 8px 12px 4px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .nav-item:hover {
+            background-color: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background-color: var(--bg-card);
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .nav-icon {
+            width: 18px;
+            text-align: center;
+            font-size: 1rem;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            background-color: var(--accent);
+            color: var(--bg-primary);
+            font-size: 0.7rem;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .sidebar-footer {
+            padding: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.8rem;
+            width: 100%;
+            transition: all 0.15s;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        /* ========================================
+           MAIN CONTENT
+           ======================================== */
+        .main {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 32px;
+            max-width: 1200px;
+        }
+
+        .page-header {
+            margin-bottom: 32px;
+        }
+
+        .page-header h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .page-header p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* ========================================
+           STATS ROW
+           ======================================== */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            transition: background-color var(--transition-speed);
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .stat-card .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .stat-card .stat-change {
+            font-size: 0.75rem;
+            margin-top: 4px;
+        }
+
+        .stat-change.up { color: var(--success); }
+        .stat-change.down { color: var(--danger); }
+
+        /* ========================================
+           CONTENT GRID (two columns)
+           ======================================== */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .content-grid.full-width {
+            grid-template-columns: 1fr;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            transition: background-color var(--transition-speed);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-header h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .card-header a {
+            font-size: 0.8rem;
+        }
+
+        .card-body {
+            padding: 16px 20px;
+        }
+
+        /* ========================================
+           RECENT NOTES LIST
+           ======================================== */
+        .note-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .note-item:last-child {
+            border-bottom: none;
+        }
+
+        .note-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .note-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .note-tags {
+            display: flex;
+            gap: 4px;
+            margin-top: 6px;
+        }
+
+        .tag {
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background-color: var(--tag-bg);
+            color: var(--accent);
+        }
+
+        /* ========================================
+           GRAPH PREVIEW
+           ======================================== */
+        .graph-preview {
+            height: 280px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            margin: 8px 0;
+        }
+
+        /* ========================================
+           DRAFT ARTICLES LIST
+           ======================================== */
+        .article-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .article-item:last-child {
+            border-bottom: none;
+        }
+
+        .article-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .article-status {
+            font-size: 0.7rem;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .status-draft {
+            background-color: var(--tag-bg);
+            color: var(--warning);
+        }
+
+        .status-review {
+            background-color: var(--tag-bg);
+            color: var(--accent);
+        }
+
+        .status-published {
+            background-color: var(--tag-bg);
+            color: var(--success);
+        }
+
+        /* ========================================
+           QUICK ACTIONS
+           ======================================== */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 20px 16px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 0.8rem;
+        }
+
+        .action-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .action-icon {
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==========================================
+         SIDEBAR (shared across all pages)
+         ========================================== -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h1>SecondBrain</h1>
+            <div class="subtitle">Your knowledge, connected</div>
+        </div>
+
+        <div class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-label">Main</div>
+                <a class="nav-item active" href="01_dashboard.html">
+                    <span class="nav-icon">&#9632;</span> Dashboard
+                </a>
+                <a class="nav-item" href="02_notes_list.html">
+                    <span class="nav-icon">&#9998;</span> Notes
+                    <span class="nav-badge">12</span>
+                </a>
+                <a class="nav-item" href="03_knowledge_graph.html">
+                    <span class="nav-icon">&#9672;</span> Knowledge Graph
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-label">Writing</div>
+                <a class="nav-item" href="04_articles_list.html">
+                    <span class="nav-icon">&#9776;</span> Articles
+                    <span class="nav-badge">3</span>
+                </a>
+                <a class="nav-item" href="#">
+                    <span class="nav-icon">&#9788;</span> Published
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-label">Insights</div>
+                <a class="nav-item" href="#">
+                    <span class="nav-icon">&#9636;</span> Analytics
+                </a>
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <span id="theme-icon">&#9790;</span>
+                <span id="theme-label">Light mode</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ==========================================
+         MAIN CONTENT
+         ========================================== -->
+    <main class="main">
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <h2>Dashboard</h2>
+            <p>Welcome back. Here's your knowledge at a glance.</p>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-label">Total Notes</div>
+                <div class="stat-value">12</div>
+                <div class="stat-change up">+3 this week</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Connections</div>
+                <div class="stat-value">28</div>
+                <div class="stat-change up">+5 new links</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Articles</div>
+                <div class="stat-value">3</div>
+                <div class="stat-change">1 draft, 2 published</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Views</div>
+                <div class="stat-value">142</div>
+                <div class="stat-change up">+22 this week</div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="content-grid full-width" style="margin-bottom: 24px;">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Quick Actions</h3>
+                </div>
+                <div class="card-body">
+                    <div class="quick-actions">
+                        <a class="action-btn" href="02_notes_list.html">
+                            <span class="action-icon">+</span>
+                            New Note
+                        </a>
+                        <a class="action-btn" href="#">
+                            <span class="action-icon">&#8593;</span>
+                            Upload Source
+                        </a>
+                        <a class="action-btn" href="04_articles_list.html">
+                            <span class="action-icon">&#9998;</span>
+                            Write Article
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Two Column: Recent Notes + Graph Preview -->
+        <div class="content-grid">
+
+            <!-- Recent Notes -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Recent Notes</h3>
+                    <a href="02_notes_list.html">View all</a>
+                </div>
+                <div class="card-body">
+                    <div class="note-item">
+                        <div>
+                            <div class="note-title">Transformer Architecture Deep Dive</div>
+                            <div class="note-meta">2 hours ago</div>
+                            <div class="note-tags">
+                                <span class="tag">AI</span>
+                                <span class="tag">Architecture</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="note-item">
+                        <div>
+                            <div class="note-title">HTMX vs React: Server-side Patterns</div>
+                            <div class="note-meta">Yesterday</div>
+                            <div class="note-tags">
+                                <span class="tag">Web Dev</span>
+                                <span class="tag">HTMX</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="note-item">
+                        <div>
+                            <div class="note-title">DuckDB for Analytics Workloads</div>
+                            <div class="note-meta">3 days ago</div>
+                            <div class="note-tags">
+                                <span class="tag">Database</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Knowledge Graph Preview -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Knowledge Graph</h3>
+                    <a href="03_knowledge_graph.html">Explore</a>
+                </div>
+                <div class="card-body">
+                    <div class="graph-preview">
+                        [ D3.js graph visualization will render here ]
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Draft Articles -->
+        <div class="content-grid full-width">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Article Drafts</h3>
+                    <a href="04_articles_list.html">View all</a>
+                </div>
+                <div class="card-body">
+                    <div class="article-item">
+                        <div>
+                            <div class="article-title">Understanding Attention Mechanisms</div>
+                            <div class="note-meta">Last edited 1 hour ago &middot; 3 notes referenced</div>
+                        </div>
+                        <span class="article-status status-draft">Draft</span>
+                    </div>
+                    <div class="article-item">
+                        <div>
+                            <div class="article-title">Why HTMX Changes Everything</div>
+                            <div class="note-meta">Last edited 2 days ago &middot; 5 notes referenced</div>
+                        </div>
+                        <span class="article-status status-review">In Review</span>
+                    </div>
+                    <div class="article-item">
+                        <div>
+                            <div class="article-title">Getting Started with DuckDB</div>
+                            <div class="note-meta">Published Jun 20 &middot; 142 views</div>
+                        </div>
+                        <span class="article-status status-published">Published</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ==========================================
+         THEME TOGGLE SCRIPT
+         ========================================== -->
+    <script>
+        /*
+         * Theme toggle — how it works:
+         *
+         * The <html> element has a data-theme attribute ("dark" or "light").
+         * All colors use CSS variables (var(--bg-primary), etc.) that change
+         * based on [data-theme="dark"] vs [data-theme="light"] selectors.
+         *
+         * This script:
+         * 1. Reads the current theme from <html data-theme="...">
+         * 2. Flips it
+         * 3. Saves to localStorage so it persists across page loads
+         * 4. Updates the button icon/label
+         */
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute("data-theme");
+            const next = current === "dark" ? "light" : "dark";
+
+            html.setAttribute("data-theme", next);
+            localStorage.setItem("theme", next);
+            updateToggleButton(next);
+        }
+
+        function updateToggleButton(theme) {
+            document.getElementById("theme-icon").textContent = theme === "dark" ? "☾" : "☀";
+            document.getElementById("theme-label").textContent = theme === "dark" ? "Light mode" : "Dark mode";
+        }
+
+        // On page load: restore saved theme
+        (function () {
+            const saved = localStorage.getItem("theme") || "dark";
+            document.documentElement.setAttribute("data-theme", saved);
+            updateToggleButton(saved);
+        })();
+    </script>
+
+</body>
+</html>
