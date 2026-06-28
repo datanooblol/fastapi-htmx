@@ -3,11 +3,11 @@
 A knowledge management app with AI-powered connections and writing assistance.
 
 ## Tech Stack
-- **Backend:** FastAPI (Python 3.12)
-- **Frontend:** Jinja2 templates + HTMX + vanilla JS
+- **Backend:** FastAPI (Python 3.12) — JSON API only
+- **Frontend:** Next.js (TypeScript + React) — App Router
 - **Database:** DuckDB (behind repository pattern for swappability)
 - **AI:** Claude CLI via subprocess (behind provider pattern for swappability)
-- **PDF Extraction:** Docling
+- **PDF Extraction:** PyMuPDF (primary), Docling (fallback)
 - **Graph Visualization:** D3.js (planned)
 
 ## Architecture Patterns
@@ -28,9 +28,9 @@ A knowledge management app with AI-powered connections and writing assistance.
 - `app/ai/` — AI provider pattern (base.py Protocol, claude_cli.py implementation)
 - `app/services/` — Business logic (source_service, summary_service, etc.)
 - `app/routers/` — FastAPI routes (dashboard, sources, prompts, etc.)
-- `app/templates/pages/` — Jinja2 page templates (extend base.html)
-- `app/templates/fragments/` — HTMX partial responses (no base)
-- `app/templates/components/` — Reusable includes (sidebar, cards, etc.)
+- `frontend/src/app/` — Next.js pages (App Router)
+- `frontend/src/components/` — Reusable React components
+- `frontend/src/lib/` — API client, TypeScript types
 - `static/uploads/` — User file uploads (gitignored)
 - `data/` — DuckDB database file (gitignored)
 
@@ -43,9 +43,17 @@ A knowledge management app with AI-powered connections and writing assistance.
 
 ## Running
 ```bash
+# Backend (Terminal 1)
+cd backend
 uv run uvicorn app.main:app --reload --port 8000
+
+# Frontend (Terminal 2)
+cd frontend
+npm run dev
 ```
 
 ## Commands
-- `uv sync` — install dependencies
-- `uv run uvicorn app.main:app --reload` — start dev server
+- `cd backend && uv sync` — install Python dependencies
+- `cd frontend && npm install` — install frontend dependencies
+- `cd backend && uv run uvicorn app.main:app --reload` — start API server
+- `cd frontend && npm run dev` — start Next.js dev server

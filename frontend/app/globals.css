@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+/* ============================================
+   DESIGN TOKENS — SecondBrain Theme
+   ============================================ */
+
+/* Dark theme (default) */
+[data-theme="dark"] {
+  --color-primary: #4fc3f7;
+  --color-primary-hover: #81d4fa;
+  --color-success: #66bb6a;
+  --color-warning: #ffa726;
+  --color-danger: #ef5350;
+
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-card: #1e2a45;
+  --bg-sidebar: #0f1629;
+  --bg-input: #151d30;
+
+  --text-primary: #e0e0e0;
+  --text-secondary: #a0a0b0;
+  --text-muted: #6a6a7a;
+
+  --border-color: #2a2a4a;
+  --tag-bg: #2a3a5a;
+  --highlight: #4a3a1a;
+
+  --node-note: #4fc3f7;
+  --node-source: #66bb6a;
+  --node-summary: #ffa726;
+  --node-article: #ab47bc;
+  --node-concept: #ec407a;
+}
+
+/* Light theme */
+[data-theme="light"] {
+  --color-primary: #1976d2;
+  --color-primary-hover: #1565c0;
+  --color-success: #388e3c;
+  --color-warning: #f57c00;
+  --color-danger: #d32f2f;
+
+  --bg-primary: #f5f5f5;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-sidebar: #f0f0f0;
+  --bg-input: #f8f8fc;
+
+  --text-primary: #1a1a2e;
+  --text-secondary: #555568;
+  --text-muted: #888898;
+
+  --border-color: #dcdce0;
+  --tag-bg: #e3edf7;
+  --highlight: #fff3cd;
+
+  --node-note: #1976d2;
+  --node-source: #388e3c;
+  --node-summary: #f57c00;
+  --node-article: #7b1fa2;
+  --node-concept: #c2185b;
+}
+
+/* ============================================
+   TAILWIND THEME MAPPING
+   ============================================ */
+@theme inline {
+  --color-sb-primary: var(--color-primary);
+  --color-sb-primary-hover: var(--color-primary-hover);
+  --color-sb-success: var(--color-success);
+  --color-sb-warning: var(--color-warning);
+  --color-sb-danger: var(--color-danger);
+
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-card: var(--bg-card);
+  --color-bg-sidebar: var(--bg-sidebar);
+  --color-bg-input: var(--bg-input);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+
+  --color-sb-border: var(--border-color);
+  --color-tag-bg: var(--tag-bg);
+  --color-highlight: var(--highlight);
+
+  --color-node-note: var(--node-note);
+  --color-node-source: var(--node-source);
+  --color-node-summary: var(--node-summary);
+  --color-node-article: var(--node-article);
+  --color-node-concept: var(--node-concept);
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--color-primary-hover);
+}

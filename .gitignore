@@ -1,4 +1,4 @@
-# Python-generated files
+# Python
 __pycache__/
 *.py[oc]
 build/
@@ -10,12 +10,22 @@ wheels/
 .venv
 
 # Database
-data/*.duckdb
-data/*.duckdb.wal
+backend/data/*.duckdb
+backend/data/*.duckdb.wal
 
 # Uploads
-static/uploads/*
-!static/uploads/.gitkeep
+backend/static/uploads/*
+!backend/static/uploads/.gitkeep
 
 # Environment
 .env
+
+# Node
+node_modules/
+frontend/.next/
+frontend/out/
+
+# IDE
+.idea/
+.vscode/
+*.swp
