@@ -6,6 +6,7 @@ import { Button } from "@/components/atoms/Button/Button";
 import { PageContainer } from "@/components/organisms/layout/PageContainer";
 import { ContentCard, ViewMode } from "@/components/organisms/shared/ContentCard";
 import { ViewToggle } from "@/components/organisms/shared/ViewToggle";
+import { SynapsePanel } from "@/components/organisms/synapse/SynapsePanel";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -34,6 +35,8 @@ export default function NotesListPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [loading, setLoading] = useState(true);
+  const [synapseOpen, setSynapseOpen] = useState(false);
+  const [synapseNoteIds, setSynapseNoteIds] = useState<string[]>([]);
 
   const fetchResults = useCallback(async () => {
     setLoading(true);
@@ -71,8 +74,19 @@ export default function NotesListPage() {
     setSelectedIds(new Set(selectedIds));
   };
 
+  const openSynapse = (ids?: string[]) => {
+    const noteOnlyIds = ids || Array.from(selectedIds).filter((id) => {
+      const item = results.find((r) => r.id === id);
+      return item?.item_type === "note";
+    });
+    if (noteOnlyIds.length === 0) { alert("Select at least one note to connect."); return; }
+    setSynapseNoteIds(noteOnlyIds);
+    setSynapseOpen(true);
+  };
+
   return (
-    <PageContainer>
+    <div className="flex h-full">
+    <PageContainer className="flex-1">
       {/* Header */}
       <div className="flex justify-between items-center mb-5">
         <div>
@@ -123,7 +137,7 @@ export default function NotesListPage() {
         <div className="flex items-center gap-3 px-4 py-2.5 bg-tag-bg border border-sb-primary rounded-lg mb-3 text-sm">
           <span className="font-semibold text-sb-primary">{selectedIds.size} selected</span>
           <div className="flex gap-1.5 ml-auto">
-            <Button variant="secondary" size="sm">Connect with Synapse</Button>
+            <Button variant="secondary" size="sm" onClick={() => openSynapse()}>Connect with Synapse</Button>
             <Button variant="danger" size="sm">Delete</Button>
             <Button variant="secondary" size="sm" onClick={clearSelection}>Cancel</Button>
           </div>
@@ -168,12 +182,23 @@ export default function NotesListPage() {
               searchQuery={query}
               actions={[
                 { label: "Open", href: item.item_type === "source" ? `/sources/${item.id}` : item.source_id ? `/sources/${item.source_id}` : "/notes" },
-                ...(item.item_type === "note" ? [{ label: "Delete", variant: "danger" as const, onClick: () => handleDelete(item.id) }] : []),
+                ...(item.item_type === "note" ? [
+                  { label: "Synapse", variant: "secondary" as const, onClick: () => openSynapse([item.id]) },
+                  { label: "Delete", variant: "danger" as const, onClick: () => handleDelete(item.id) },
+                ] : []),
               ]}
             />
           ))}
         </div>
       )}
     </PageContainer>
+
+    <SynapsePanel
+      isOpen={synapseOpen}
+      onClose={() => setSynapseOpen(false)}
+      noteIds={synapseNoteIds}
+      onComplete={() => { clearSelection(); fetchResults(); }}
+    />
+    </div>
   );
 }

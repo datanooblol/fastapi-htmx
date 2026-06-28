@@ -113,3 +113,12 @@ def list_connections(
     conn_repo=Depends(get_connection_repo),
 ):
     return conn_repo.list_all(USER_ID, status="confirmed")
+
+
+@router.delete("/connections/{conn_id}")
+def delete_connection(
+    conn_id: str,
+    conn_repo=Depends(get_connection_repo),
+):
+    conn_repo.delete(conn_id)
+    return {"ok": True}

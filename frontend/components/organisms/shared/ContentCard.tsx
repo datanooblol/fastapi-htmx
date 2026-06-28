@@ -103,8 +103,24 @@ export function ContentCard({
         )}
 
         {tags && tags.length > 0 && (
-          <div className="flex gap-1 flex-wrap mt-3 pt-3 border-t border-sb-border">
+          <div className="flex gap-1 flex-wrap mt-2">
             {tags.map((t) => <Tag key={t} label={t} />)}
+          </div>
+        )}
+
+        {(actions && actions.length > 0) && (
+          <div className="flex gap-1.5 mt-3 pt-3 border-t border-sb-border">
+            {actions.map((action, i) => (
+              action.href ? (
+                <Link key={i} href={action.href}>
+                  <Button variant={action.variant || "secondary"} size="sm">{action.label}</Button>
+                </Link>
+              ) : (
+                <Button key={i} variant={action.variant || "secondary"} size="sm" onClick={action.onClick}>
+                  {action.label}
+                </Button>
+              )
+            ))}
           </div>
         )}
 

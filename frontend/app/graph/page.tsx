@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/atoms/Button/Button";
 import { GraphCanvas } from "@/components/organisms/graph/GraphCanvas";
 import { NodeDetail } from "@/components/organisms/graph/NodeDetail";
+import { SynapsePanel } from "@/components/organisms/synapse/SynapsePanel";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -29,6 +30,7 @@ export default function KnowledgeGraphPage() {
   });
   const [selectedNode, setSelectedNode] = useState<{ id: string; type: string } | null>(null);
   const [search, setSearch] = useState("");
+  const [synapseOpen, setSynapseOpen] = useState(false);
 
   useEffect(() => {
     fetch(`${API_BASE}/graph/data`)
@@ -71,9 +73,10 @@ export default function KnowledgeGraphPage() {
             className="px-3 py-1.5 bg-bg-input border border-sb-border rounded-md text-text-primary text-sm font-sans w-52 focus:outline-none focus:border-sb-primary"
           />
           <div className="w-px h-6 bg-sb-border" />
-          <Link href="/synapse">
-            <Button variant="success" size="sm">Synapse: All</Button>
-          </Link>
+          <Button variant="success" size="sm" onClick={() => {
+            setSelectedNode(null);
+            setSynapseOpen(true);
+          }}>Synapse: All</Button>
         </div>
 
         {/* Node filters */}
@@ -129,7 +132,7 @@ export default function KnowledgeGraphPage() {
       </div>
 
       {/* Node detail panel */}
-      {selectedNode && (
+      {selectedNode && !synapseOpen && (
         <NodeDetail
           nodeId={selectedNode.id}
           nodeType={selectedNode.type}
@@ -138,6 +141,17 @@ export default function KnowledgeGraphPage() {
           onNodeClick={handleNodeClick}
         />
       )}
+
+      {/* Synapse panel */}
+      <SynapsePanel
+        isOpen={synapseOpen}
+        onClose={() => setSynapseOpen(false)}
+        noteIds={data?.nodes?.filter((n) => n.type === "note").map((n) => n.id) || []}
+        onComplete={() => {
+          // Refresh graph data
+          fetch(`${API_BASE}/graph/data`).then((r) => r.json()).then(setData);
+        }}
+      />
     </div>
   );
 }
